@@ -21,8 +21,8 @@
     "allowImportingTsExtensions": true,
 
     "paths": {
-      "#/*": ["./src/*"],
-    },
+      "#/*": ["./src/*"]
+    }
   },
-  "include": ["src", "vite.config.ts", "oxlint.config.ts", "oxfmt.config.ts"],
+  "include": ["src", "vite.config.ts", "oxlint.config.ts", "oxfmt.config.ts"]
 }

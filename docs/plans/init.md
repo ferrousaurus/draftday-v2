@@ -6,14 +6,14 @@ Status: planned (skeleton repo). Source of truth: `docs/specs/init.md` (the spec
 
 ## 0. Current state (repo snapshot, 2026-08-11)
 
-| Area | State |
-| --- | --- |
-| Routes | `src/routes/__root.tsx`, `src/routes/index.tsx` ("Hello, world!"), `src/router.tsx`, generated `routeTree.gen.ts` |
-| Toolchain | TanStack Start SPA + Nitro `deno-deploy` preset; React 19, Mantine, Query/Table/Router, Zustand, zod, `@e965/xlsx`, `idb-keyval` already in `package.json` |
-| Config | `vite.config.ts` (tanstackStart + nitro + viteReact), `vitest.config.ts` (varlock plugin), `oxlint.config.ts` (type-aware + jsPlugins), `oxfmt.config.ts`, `tsconfig.json` (`#/*` alias, `.ts` imports, `deno.d.ts` in `types`), `deno.json` (allowScripts only), `.env.schema` (matches §10.2: 3 vars, decorators, no values), `.env.local` present |
-| Gates | `deno task check` passes; `lint` passes (warnings); `fmt:check` **fails** (committed source is double-quoted); `deno task test` **broken** (vitest crashes loading `vite.config.ts`: `ReferenceError: module is not defined`) |
-| Tests | none; no `tests/` dir; no `tests/fixtures/` |
-| Resources | `resources/2026-FFB-Projections-0805-1.xlsx` present but **untracked** (oracle tests must skip cleanly without it) |
+| Area      | State                                                                                                                                                                                                                                                                                                                                                |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Routes    | `src/routes/__root.tsx`, `src/routes/index.tsx` ("Hello, world!"), `src/router.tsx`, generated `routeTree.gen.ts`                                                                                                                                                                                                                                    |
+| Toolchain | TanStack Start SPA + Nitro `deno-deploy` preset; React 19, Mantine, Query/Table/Router, Zustand, zod, `@e965/xlsx`, `idb-keyval` already in `package.json`                                                                                                                                                                                           |
+| Config    | `vite.config.ts` (tanstackStart + nitro + viteReact), `vitest.config.ts` (varlock plugin), `oxlint.config.ts` (type-aware + jsPlugins), `oxfmt.config.ts`, `tsconfig.json` (`#/*` alias, `.ts` imports, `deno.d.ts` in `types`), `deno.json` (allowScripts only), `.env.schema` (matches §10.2: 3 vars, decorators, no values), `.env.local` present |
+| Gates     | `deno task check` passes; `lint` passes (warnings); `fmt:check` **fails** (committed source is double-quoted); `deno task test` **broken** (vitest crashes loading `vite.config.ts`: `ReferenceError: module is not defined`)                                                                                                                        |
+| Tests     | none; no `tests/` dir; no `tests/fixtures/`                                                                                                                                                                                                                                                                                                          |
+| Resources | `resources/2026-FFB-Projections-0805-1.xlsx` present but **untracked** (oracle tests must skip cleanly without it)                                                                                                                                                                                                                                   |
 
 ## 1. Guiding principles
 
@@ -260,14 +260,14 @@ M4 and M5 can proceed in parallel once M1 lands. M3 needs M2 (projectedPoints). 
 
 ## 3. Risks & mitigations
 
-| Risk | Mitigation |
-| --- | --- |
+| Risk                                                          | Mitigation                                                                                                                                                        |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Vitest/vite.config.ts module-runner crash resists fixing (M0) | Documented workaround path exists (exclude vite.config.ts from vitest config load); dev/build unaffected; record app-scoped exception in AGENTS.md only if forced |
-| BeatADP markup changes break the scraper (§9.4) | Parser isolated in one module + fixture tests; KV cache limits fetch frequency; shape re-verified per cache miss |
-| Kona credentials become invalid mid-session | §5.5 degradation path: 401 → BeatADP ESPN column + banner + settings unlock; tested in M8 |
-| ESPN kona API drift (headers/fields) | Live-probe tests pin §5.3 shapes (skip cleanly without creds); settings rule/slot-id mapping fixture-tested |
-| Real workbook untracked / absent in CI | Oracle + kona tests skip cleanly; synthetic fixture pins parser/engine in CI (§3.3) |
-| Deno KV `expireIn` non-strict expiry | Midnight expiry is a freshness policy, not a correctness bound; client `adpCache` same policy (§5.2, §7) |
+| BeatADP markup changes break the scraper (§9.4)               | Parser isolated in one module + fixture tests; KV cache limits fetch frequency; shape re-verified per cache miss                                                  |
+| Kona credentials become invalid mid-session                   | §5.5 degradation path: 401 → BeatADP ESPN column + banner + settings unlock; tested in M8                                                                         |
+| ESPN kona API drift (headers/fields)                          | Live-probe tests pin §5.3 shapes (skip cleanly without creds); settings rule/slot-id mapping fixture-tested                                                       |
+| Real workbook untracked / absent in CI                        | Oracle + kona tests skip cleanly; synthetic fixture pins parser/engine in CI (§3.3)                                                                               |
+| Deno KV `expireIn` non-strict expiry                          | Midnight expiry is a freshness policy, not a correctness bound; client `adpCache` same policy (§5.2, §7)                                                          |
 
 ## 4. Definition of done
 

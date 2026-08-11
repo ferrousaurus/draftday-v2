@@ -274,11 +274,11 @@ The skill rule files are left unchanged — the breaches are app-specific, not p
 
 The app has **no env-driven runtime behavior**: the kona credentials (`espn_s2`/`SWID`) are user-entered client-side data (§5.5), not environment variables, and no server code consumes env vars. The project's only environment variables are the **test-suite credentials** for the league-aware ESPN live-probe tests (§5.3), read from the environment by test code:
 
-| Var                  | Type     | Purpose                                                    | Decorators                   |
-| -------------------- | -------- | ---------------------------------------------------------- | ---------------------------- |
-| `VITEST_ESPN_S2`     | string   | `espn_s2` session cookie for the kona live-probe tests     | `@type=string` `@sensitive`  |
-| `VITEST_SWID`        | string   | `SWID` cookie for the kona live-probe tests                | `@type=string` `@sensitive`  |
-| `VITEST_ESPN_LEAGUE` | number   | league id for the kona live-probe tests (public, §5.5)     | `@type=number`               |
+| Var                  | Type   | Purpose                                                | Decorators                  |
+| -------------------- | ------ | ------------------------------------------------------ | --------------------------- |
+| `VITEST_ESPN_S2`     | string | `espn_s2` session cookie for the kona live-probe tests | `@type=string` `@sensitive` |
+| `VITEST_SWID`        | string | `SWID` cookie for the kona live-probe tests            | `@type=string` `@sensitive` |
+| `VITEST_ESPN_LEAGUE` | number | league id for the kona live-probe tests (public, §5.5) | `@type=number`              |
 
 Validation, injection, and secret hygiene are handled by **Varlock** (varlock.dev) — the project's stack-preferred secrets-management tool per `ferrousaurus-stack-preferences`, so no deviation is recorded:
 

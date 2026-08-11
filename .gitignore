@@ -4,3 +4,5 @@ node_modules/
 .vinxi/
 .vite/
 routeTree.gen.ts
+.env.local
+deno.d.ts

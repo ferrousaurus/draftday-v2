@@ -1,6 +1,24 @@
 {
   "version": 1,
   "skills": {
+    "deno": {
+      "source": "denoland/skills",
+      "sourceType": "github",
+      "skillPath": "skills/deno/SKILL.md",
+      "computedHash": "ac6e73271ee74ee92ee995bcd99661da6d8ad5280d90aee637b53267f6d3fbb7"
+    },
+    "deno-deploy": {
+      "source": "denoland/skills",
+      "sourceType": "github",
+      "skillPath": "skills/deno-deploy/SKILL.md",
+      "computedHash": "99a0e43734dd70eef348c7e0ef043e127ac280046f06d5bf65a8b0a8ee9a3f1d"
+    },
+    "deno-frontend": {
+      "source": "denoland/skills",
+      "sourceType": "github",
+      "skillPath": "skills/deno-frontend/SKILL.md",
+      "computedHash": "8cbd751af41a0cd988e9220eb93a36a4e1f254c193932ce3534da0fa608abd17"
+    },
     "ferrousaurus-react-best-practices": {
       "source": "ferrousaurus/skills",
       "sourceType": "github",
@@ -18,6 +36,12 @@
       "sourceType": "github",
       "skillPath": "ferrousaurus-typescript-best-practices/SKILL.md",
       "computedHash": "f1b0f485cb2fc6f29b5fb12e78782626dce4b2c77a26e235372d17cc924868a0"
+    },
+    "xlsx": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/xlsx/SKILL.md",
+      "computedHash": "f5945e6e76dc7c178375e5cdf3140959b30cbcd4570ec3dc62296812259fc38d"
     }
   }
 }

@@ -24,7 +24,7 @@
     "npm:react@19.2.8": "19.2.8",
     "npm:typescript@7.0.2": "7.0.2",
     "npm:vite@8.2.1": "8.2.1_@types+node@26.2.0_esbuild@0.28.2_jiti@2.7.0",
-    "npm:vitest@4.1.10": "4.1.10_@types+node@26.2.0_vite@8.2.1__@types+node@26.2.0__esbuild@0.28.2__jiti@2.7.0",
+    "npm:vitest@^4.1.10": "4.1.10_@types+node@26.2.0_vite@8.2.1__@types+node@26.2.0__esbuild@0.28.2__jiti@2.7.0",
     "npm:zod@4.4.3": "4.4.3",
     "npm:zustand@5.0.14": "5.0.14_@types+react@19.2.18_react@19.2.8"
   },
@@ -1633,7 +1633,6 @@
       "integrity": "sha512-ys+sGvnnE8BUNjGsngg+MGn3F5lV4okL5CWEKFzjBSjQsrTN7apGfmqvBP3O6PkRPHpXZ8X3Z5QsFvSc0CaDRQ==",
       "dependencies": [
         "@tanstack/start-plugin-core@1.131.50_vite@8.2.1__@types+node@26.2.0__esbuild@0.28.2__jiti@2.7.0_@tanstack+react-router@1.170.25__react@19.2.8__react-dom@19.2.8___react@19.2.8_@types+node@26.2.0_idb-keyval@6.3.0_react@19.2.8_react-dom@19.2.8__react@19.2.8",
-        "@vitejs/plugin-react@4.7.0_vite@8.2.1__@types+node@26.2.0__esbuild@0.28.2__jiti@2.7.0_@types+node@26.2.0",
         "pathe@2.0.3",
         "vite@8.2.1_@types+node@26.2.0_esbuild@0.28.2_jiti@2.7.0",
         "zod@3.25.76"
@@ -1887,12 +1886,11 @@
         "@tanstack/start-server-functions-handler",
         "@vitejs/plugin-react@4.7.0_vite@8.2.1__@types+node@26.2.0__esbuild@0.28.2__jiti@2.7.0_@types+node@26.2.0",
         "import-meta-resolve",
-        "nitropack@2.13.4_@types+node@26.2.0_idb-keyval@6.3.0_vite@8.2.1__@types+node@26.2.0__esbuild@0.28.2__jiti@2.7.0",
+        "nitropack",
         "ofetch@1.5.1",
         "react",
         "react-dom",
         "vinxi",
-        "vite@8.2.1_@types+node@26.2.0_esbuild@0.28.2_jiti@2.7.0",
         "zod@3.25.76"
       ]
     },
@@ -1916,7 +1914,7 @@
         "babel-dead-code-elimination",
         "cheerio",
         "h3@1.13.0",
-        "nitropack@2.13.4_@types+node@26.2.0_idb-keyval@6.3.0_vite@8.2.1__@types+node@26.2.0__esbuild@0.28.2__jiti@2.7.0",
+        "nitropack",
         "pathe@2.0.3",
         "ufo",
         "vite@8.2.1_@types+node@26.2.0_esbuild@0.28.2_jiti@2.7.0",
@@ -2297,8 +2295,7 @@
         "@babel/plugin-transform-react-jsx-source",
         "@rolldown/pluginutils@1.0.0-beta.27",
         "@types/babel__core",
-        "react-refresh",
-        "vite@8.2.1_@types+node@26.2.0_esbuild@0.28.2_jiti@2.7.0"
+        "react-refresh"
       ]
     },
     "@vitejs/plugin-react@6.0.5_vite@8.2.1__@types+node@26.2.0__esbuild@0.28.2__jiti@2.7.0_@types+node@26.2.0": {
@@ -2319,7 +2316,7 @@
         "tinyrainbow"
       ]
     },
-    "@vitest/mocker@4.1.10_vite@8.2.1__@types+node@26.2.0__esbuild@0.28.2__jiti@2.7.0_@types+node@26.2.0": {
+    "@vitest/mocker@4.1.10_vite@8.2.1__@types+node@26.2.0__esbuild@0.28.2__jiti@2.7.0": {
       "integrity": "sha512-v0xaezt+DKEmKfaxg133ldzADrwLGd7Ze1MfQQTYfvs8OqZIwbxyxaYURivwV7sWy5fqn3rH5uOrSp07bp44Ow==",
       "dependencies": [
         "@vitest/spy",
@@ -4066,83 +4063,7 @@
         "uncrypto",
         "unctx",
         "unenv@2.0.0-rc.24",
-        "unimport@6.4.0_@types+node@26.2.0_esbuild@0.28.2_jiti@2.7.0_rollup@4.62.4_vite@6.4.3__@types+node@26.2.0__jiti@2.7.0",
-        "unplugin-utils",
-        "unstorage@1.17.5_db0@0.3.4_idb-keyval@6.3.0_ioredis@5.11.1",
-        "untyped",
-        "unwasm",
-        "youch",
-        "youch-core"
-      ],
-      "bin": true
-    },
-    "nitropack@2.13.4_@types+node@26.2.0_idb-keyval@6.3.0_vite@8.2.1__@types+node@26.2.0__esbuild@0.28.2__jiti@2.7.0": {
-      "integrity": "sha512-tX7bT6zxNeMwkc6hxHiZeUoTOjVrcjoh1Z3cmxOlodIqjl4HISgqfGOmkWSayky3Nv9Z5+KQH52F8nmXJY5AAA==",
-      "dependencies": [
-        "@cloudflare/kv-asset-handler",
-        "@rollup/plugin-alias",
-        "@rollup/plugin-commonjs",
-        "@rollup/plugin-inject",
-        "@rollup/plugin-json",
-        "@rollup/plugin-node-resolve",
-        "@rollup/plugin-replace",
-        "@rollup/plugin-terser",
-        "@vercel/nft",
-        "archiver",
-        "c12",
-        "chokidar@5.0.0",
-        "citty@0.2.2",
-        "compatx",
-        "confbox@0.2.4",
-        "consola",
-        "cookie-es@2.0.1",
-        "croner",
-        "crossws@0.3.5",
-        "db0",
-        "defu",
-        "destr",
-        "dot-prop",
-        "esbuild@0.28.2",
-        "escape-string-regexp@5.0.0",
-        "etag",
-        "exsolve",
-        "globby",
-        "gzip-size",
-        "h3@1.15.11",
-        "hookable@5.5.3",
-        "httpxy",
-        "ioredis",
-        "jiti@2.7.0",
-        "klona",
-        "knitwork",
-        "listhen",
-        "magic-string@0.30.21",
-        "magicast",
-        "mime@4.1.0",
-        "mlly",
-        "node-fetch-native",
-        "node-mock-http",
-        "ofetch@1.5.1",
-        "ohash@2.0.11",
-        "pathe@2.0.3",
-        "perfect-debounce",
-        "pkg-types@2.3.1",
-        "pretty-bytes",
-        "radix3",
-        "rollup",
-        "rollup-plugin-visualizer",
-        "scule",
-        "semver@7.8.5",
-        "serve-placeholder",
-        "serve-static@2.2.1",
-        "source-map@0.7.6",
-        "std-env@4.2.0",
-        "ufo",
-        "ultrahtml",
-        "uncrypto",
-        "unctx",
-        "unenv@2.0.0-rc.24",
-        "unimport@6.4.0_@types+node@26.2.0_esbuild@0.28.2_jiti@2.7.0_rollup@4.62.4_vite@8.2.1__@types+node@26.2.0__esbuild@0.28.2__jiti@2.7.0",
+        "unimport",
         "unplugin-utils",
         "unstorage@1.17.5_db0@0.3.4_idb-keyval@6.3.0_ioredis@5.11.1",
         "untyped",
@@ -5164,25 +5085,6 @@
         "unplugin-utils"
       ]
     },
-    "unimport@6.4.0_@types+node@26.2.0_esbuild@0.28.2_jiti@2.7.0_rollup@4.62.4_vite@8.2.1__@types+node@26.2.0__esbuild@0.28.2__jiti@2.7.0": {
-      "integrity": "sha512-JJOOuNMFq8b4ZPBKwQUxEcba4MplskDzYI1Lvrf8rJfWphZTWvPNXWa493qsPngHUmub89w6C7j+SeLWTE/UIQ==",
-      "dependencies": [
-        "acorn",
-        "escape-string-regexp@5.0.0",
-        "estree-walker@3.0.3",
-        "local-pkg",
-        "magic-string@1.1.0",
-        "mlly",
-        "pathe@2.0.3",
-        "picomatch@4.0.5",
-        "pkg-types@2.3.1",
-        "scule",
-        "strip-literal",
-        "tinyglobby",
-        "unplugin@3.3.0_esbuild@0.28.2_rollup@4.62.4_vite@8.2.1__@types+node@26.2.0__esbuild@0.28.2__jiti@2.7.0_@types+node@26.2.0_jiti@2.7.0",
-        "unplugin-utils"
-      ]
-    },
     "unplugin-utils@0.3.2": {
       "integrity": "sha512-xVToRh2CTmLk2HnEG7ac4rl1MJTT3RFkpS8B++/SnB0kXvuaavD+n3m/vrzyWQOdJNSZQACnbz01pnppbwV5BA==",
       "dependencies": [
@@ -5206,13 +5108,11 @@
         "esbuild@0.28.2",
         "picomatch@4.0.5",
         "rollup",
-        "vite@6.4.3_@types+node@26.2.0_jiti@2.7.0",
         "webpack-virtual-modules"
       ],
       "optionalPeers": [
         "esbuild@0.28.2",
-        "rollup",
-        "vite@6.4.3_@types+node@26.2.0_jiti@2.7.0"
+        "rollup"
       ]
     },
     "unplugin@3.3.0_esbuild@0.28.2_rollup@4.62.4_vite@8.2.1__@types+node@26.2.0__esbuild@0.28.2__jiti@2.7.0_@types+node@26.2.0_jiti@2.7.0": {
@@ -5373,7 +5273,7 @@
         "hookable@5.5.3",
         "http-proxy",
         "micromatch",
-        "nitropack@2.13.4_@types+node@26.2.0_idb-keyval@6.3.0_vite@6.4.3__@types+node@26.2.0__jiti@2.7.0",
+        "nitropack",
         "node-fetch-native",
         "path-to-regexp",
         "pathe@1.1.2",
@@ -5670,7 +5570,7 @@
         "npm:react@19.2.8",
         "npm:typescript@7.0.2",
         "npm:vite@8.2.1",
-        "npm:vitest@4.1.10",
+        "npm:vitest@^4.1.10",
         "npm:zod@4.4.3",
         "npm:zustand@5.0.14"
       ]

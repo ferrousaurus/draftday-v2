@@ -8,3 +8,4 @@ dist/
 routeTree.gen.ts
 .env.local
 deno.d.ts
+resources/

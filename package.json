@@ -12,7 +12,7 @@
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
     "check": "deno run gen:types && tsc --noEmit",
-    "test": "deno run gen:types && varlock run -- deno x -E vitest run"
+    "test": "deno run gen:types && vitest run"
   },
   "dependencies": {
     "@e965/xlsx": "0.20.3",

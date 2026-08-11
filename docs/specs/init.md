@@ -26,17 +26,17 @@ Settings changes recompute Projected Points, VORP, xADP, and deltas **live, clie
 
 ### 2.1 Parsed player record
 
-| Field | Type | Source |
-|---|---|---|
-| `id` | string | `${position}:${playerName}` (stable per-file key) |
-| `position` | `QB` \| `RB` \| `WR` \| `TE` \| `DST` | master sheet block |
-| `name` | string | master sheet `Player` (team full name for DST) |
-| `team` | string | master sheet `TM`; canonical internal code (see §4); `DST` uses team full name + abbrev |
-| `bye` | number | master sheet `BYE` |
-| `rawStats` | object | per-position stat categories (§3.1) |
-| `filePoints` | number | workbook's `Custom` value (reference only; oracle for tests) |
-| `playerId` | number \| null | `Rankings` sheet `Player ID` (opaque; **not** used for matching, §4) |
-| `ref` | number | master-sheet `*Ref` index (join key with `Rankings`) |
+| Field        | Type                                  | Source                                                                                  |
+| ------------ | ------------------------------------- | --------------------------------------------------------------------------------------- |
+| `id`         | string                                | `${position}:${playerName}` (stable per-file key)                                       |
+| `position`   | `QB` \| `RB` \| `WR` \| `TE` \| `DST` | master sheet block                                                                      |
+| `name`       | string                                | master sheet `Player` (team full name for DST)                                          |
+| `team`       | string                                | master sheet `TM`; canonical internal code (see §4); `DST` uses team full name + abbrev |
+| `bye`        | number                                | master sheet `BYE`                                                                      |
+| `rawStats`   | object                                | per-position stat categories (§3.1)                                                     |
+| `filePoints` | number                                | workbook's `Custom` value (reference only; oracle for tests)                            |
+| `playerId`   | number \| null                        | `Rankings` sheet `Player ID` (opaque; **not** used for matching, §4)                    |
+| `ref`        | number                                | master-sheet `*Ref` index (join key with `Rankings`)                                    |
 
 ### 2.2 Derived per-player values
 
@@ -63,6 +63,7 @@ The **app parses exactly seven sheets** from the uploaded workbook:
 The **`Settings` sheet is not parsed by the app.** The test suite reads it directly to run the oracle (§3.3).
 
 Parsing rules:
+
 - Read cached cell values (never recompute workbook formulas; the workbook has a broken external link and cached values are authoritative).
 - Skip rows whose `Player` is empty, `"0"`, or a placeholder; skip `#N/A` cached cells.
 - Percentages are decimal fractions; BYE weeks are integers — we consume raw stat counts only, so no unit conversion is needed.
@@ -71,27 +72,27 @@ Parsing rules:
 
 ### 3.2 League settings (app-owned; never from the workbook)
 
-| Group | Field | Default | Editable |
-|---|---|---|---|
-| Platform | Platform | ESPN | yes (`ESPN` \| `Yahoo` \| `Sleeper`) |
-| Platform | League-aware | off | yes (ESPN/Sleeper only; hidden for Yahoo) |
-| Platform | League ID | — | yes (required when league-aware) |
-| Platform | ESPN credentials (`espn_s2` / `SWID`) | — | yes (required when league-aware ESPN) — persisted with settings (§5.5, §7); never stored server-side or in any cache |
-| Platform | Draft type | REDRAFT | yes — options depend on platform: ESPN=`REDRAFT` only (the select is inert — ESPN never exposes best-ball or dynasty); Yahoo=`REDRAFT`, `BEST_BALL`; Sleeper=`REDRAFT`, `BEST_BALL`, `DYNASTY`. **Locked to the league's type when league-aware** (keeper leagues map to `REDRAFT`, §5.4). |
-| Core | PPR | 0.5 (RB/WR/TE) | yes (0 / 0.5 / 1 / Custom) — a segmented control over the three RECEPTIONS fields; `Custom` reveals a per-position RECEPTIONS stepper for RB/WR/TE (§3.2 note) |
-| Core | League size (teams) | 12 | yes (drives §6.1 baselines and §6.3 round rule) |
-| Core | Pass TD | 4 | yes (segmented 4 / 6) |
-| Scoring | PASS ATTEMPTS / COMPLETIONS / TARGETS | 0 | yes (advanced, collapsible) |
-| Scoring | PASS YARDS | 0.04 | yes (segmented 0.04 / 0.05 / 0.1) |
-| Scoring | INTERCEPTIONS | −2 | yes |
-| Scoring | RUSH YARDS / RECV YARDS | 0.1 | yes |
-| Scoring | RUSH TDS / RECV TDS | 6 | yes |
-| Scoring | RECEPTIONS (RB / WR / TE) | 0.5 each | yes — **canonical** PPR representation; revealed as per-position steppers under the PPR chip's `Custom` option (§3.2 note) |
-| Scoring | DEF SACKS / DEF INT / DEF FORCE FUMBLE / DEF RECOVER FUMBLE / DEF SAFETIES / DEF TOUCHDOWN | 1 / 2 / 1 / 1 / 2 / 6 | yes |
-| Scoring | DEF points-allowed buckets | n/a | **hidden** — the workbook carries no per-team game distribution, so bucket scoring cannot be priced (verified: the file's own DST totals ignore buckets entirely) |
-| Roster | STARTING QB / RB / WR / TE / DST / FLEX / SUPERFLEX | 1 / 2 / 3 / 1 / 1 / 1 / 0 | yes — active: `qbType` derivation (§3.2) and VORP replacement baselines (§6.1); sourced from the league when league-aware (§5.4) |
-| Roster | AUCTION BUDGET | 200 | yes — stored, unused in v1 (no auction dollars anywhere in v1) |
-| Season | Season | 2026 | yes (advanced) — passed to the kona provider; BeatADP is seasonless ("latest") |
+| Group    | Field                                                                                      | Default                   | Editable                                                                                                                                                                                                                                                                                   |
+| -------- | ------------------------------------------------------------------------------------------ | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Platform | Platform                                                                                   | ESPN                      | yes (`ESPN` \| `Yahoo` \| `Sleeper`)                                                                                                                                                                                                                                                       |
+| Platform | League-aware                                                                               | off                       | yes (ESPN/Sleeper only; hidden for Yahoo)                                                                                                                                                                                                                                                  |
+| Platform | League ID                                                                                  | —                         | yes (required when league-aware)                                                                                                                                                                                                                                                           |
+| Platform | ESPN credentials (`espn_s2` / `SWID`)                                                      | —                         | yes (required when league-aware ESPN) — persisted with settings (§5.5, §7); never stored server-side or in any cache                                                                                                                                                                       |
+| Platform | Draft type                                                                                 | REDRAFT                   | yes — options depend on platform: ESPN=`REDRAFT` only (the select is inert — ESPN never exposes best-ball or dynasty); Yahoo=`REDRAFT`, `BEST_BALL`; Sleeper=`REDRAFT`, `BEST_BALL`, `DYNASTY`. **Locked to the league's type when league-aware** (keeper leagues map to `REDRAFT`, §5.4). |
+| Core     | PPR                                                                                        | 0.5 (RB/WR/TE)            | yes (0 / 0.5 / 1 / Custom) — a segmented control over the three RECEPTIONS fields; `Custom` reveals a per-position RECEPTIONS stepper for RB/WR/TE (§3.2 note)                                                                                                                             |
+| Core     | League size (teams)                                                                        | 12                        | yes (drives §6.1 baselines and §6.3 round rule)                                                                                                                                                                                                                                            |
+| Core     | Pass TD                                                                                    | 4                         | yes (segmented 4 / 6)                                                                                                                                                                                                                                                                      |
+| Scoring  | PASS ATTEMPTS / COMPLETIONS / TARGETS                                                      | 0                         | yes (advanced, collapsible)                                                                                                                                                                                                                                                                |
+| Scoring  | PASS YARDS                                                                                 | 0.04                      | yes (segmented 0.04 / 0.05 / 0.1)                                                                                                                                                                                                                                                          |
+| Scoring  | INTERCEPTIONS                                                                              | −2                        | yes                                                                                                                                                                                                                                                                                        |
+| Scoring  | RUSH YARDS / RECV YARDS                                                                    | 0.1                       | yes                                                                                                                                                                                                                                                                                        |
+| Scoring  | RUSH TDS / RECV TDS                                                                        | 6                         | yes                                                                                                                                                                                                                                                                                        |
+| Scoring  | RECEPTIONS (RB / WR / TE)                                                                  | 0.5 each                  | yes — **canonical** PPR representation; revealed as per-position steppers under the PPR chip's `Custom` option (§3.2 note)                                                                                                                                                                 |
+| Scoring  | DEF SACKS / DEF INT / DEF FORCE FUMBLE / DEF RECOVER FUMBLE / DEF SAFETIES / DEF TOUCHDOWN | 1 / 2 / 1 / 1 / 2 / 6     | yes                                                                                                                                                                                                                                                                                        |
+| Scoring  | DEF points-allowed buckets                                                                 | n/a                       | **hidden** — the workbook carries no per-team game distribution, so bucket scoring cannot be priced (verified: the file's own DST totals ignore buckets entirely)                                                                                                                          |
+| Roster   | STARTING QB / RB / WR / TE / DST / FLEX / SUPERFLEX                                        | 1 / 2 / 3 / 1 / 1 / 1 / 0 | yes — active: `qbType` derivation (§3.2) and VORP replacement baselines (§6.1); sourced from the league when league-aware (§5.4)                                                                                                                                                           |
+| Roster   | AUCTION BUDGET                                                                             | 200                       | yes — stored, unused in v1 (no auction dollars anywhere in v1)                                                                                                                                                                                                                             |
+| Season   | Season                                                                                     | 2026                      | yes (advanced) — passed to the kona provider; BeatADP is seasonless ("latest")                                                                                                                                                                                                             |
 
 **PPR chip rule:** the three per-position `RECEPTIONS` values are canonical. The PPR chip is a segmented control with options `0` / `0.5` / `1` / `Custom`. Selecting `0`, `0.5`, or `1` writes all three RECEPTIONS at once. Selecting `Custom` reveals a per-position RECEPTIONS stepper (RB/WR/TE, validated `0–2`); the chip reflects `Custom` whenever the three values diverge or take a non-`0`/`0.5`/`1` value. The chip's display value is computed during render from the canonical RECEPTIONS triple (no stored derived state).
 
@@ -107,7 +108,7 @@ Parsing rules:
 - **RB/WR/TE**: the above rushing/receiving terms plus `REC × ppr(position)` and `RCYD×rcyd + RCTD×rctd`.
 - **DST**: `SACKS×1 + INT×2 + FF×1 + FR×1 + SAF×2 + TD×6` (at default rates; editable). Points-allowed buckets are not applied in v1.
 
-**Oracle test:** the test suite parses the workbook's `Settings` sheet (test-only), runs the engine under *those* settings, and requires `projectedPoints` to reproduce the workbook's `Custom` values within `1e-6` relative error for all positions. The oracle runs against the real workbook when present and **skips cleanly when absent**; a committed synthetic fixture (a small hand-built xlsx under `tests/fixtures/`) exercises the parser and pins the engine math in CI. The app itself never reads `Settings`. Open item (resolved): the QB master `FPS` differs from `Custom` (~5.6 pts for Josh Allen); the oracle targets `Custom`; the discrepancy is documented in `tests/scoring.test.ts`.
+**Oracle test:** the test suite parses the workbook's `Settings` sheet (test-only), runs the engine under _those_ settings, and requires `projectedPoints` to reproduce the workbook's `Custom` values within `1e-6` relative error for all positions. The oracle runs against the real workbook when present and **skips cleanly when absent**; a committed synthetic fixture (a small hand-built xlsx under `tests/fixtures/`) exercises the parser and pins the engine math in CI. The app itself never reads `Settings`. Open item (resolved): the QB master `FPS` differs from `Custom` (~5.6 pts for Josh Allen); the oracle targets `Custom`; the discrepancy is documented in `tests/scoring.test.ts`.
 
 ## 4. Player Matching (file → ADP provider)
 
@@ -169,7 +170,7 @@ When league-aware is enabled, the league API is the settings authority:
 
 - Failures surface as a banner with a retry action; the board remains fully usable without ADP data (columns blank, §6.1).
 - **No-credentials restore (ESPN league-aware):** credentials persist with settings, so a reopened tab restores league-aware mode. When credentials are absent (never entered, cleared, or removed by "Start over") or rejected (401), the board degrades to BeatADP's ESPN column with a banner — "League-aware credentials were cleared — showing BeatADP's ESPN ADP. Reconnect your league in settings" — and the ADP-source label shows the degradation. Consistent with a league-fetch failure (§5.4), the previously locked settings unlock and stay editable with their values preserved; re-entering valid credentials re-locks them from the league. Sleeper is unaffected (its `leagueId` is public and persists).
-- **Credentials:** `espn_s2`/`SWID` are entered in the setup UI and **persisted with settings in IndexedDB** (§7) — never stored server-side, never logged, never written to any cache (Deno KV or in-memory, §5.3) — and passed as arguments to the kona server function per request (transmitted, never retained). The kona *response* is never cached server-side (§5.3); it is cached client-side in the IndexedDB `adpCache` like every other provider's response (§7).
+- **Credentials:** `espn_s2`/`SWID` are entered in the setup UI and **persisted with settings in IndexedDB** (§7) — never stored server-side, never logged, never written to any cache (Deno KV or in-memory, §5.3) — and passed as arguments to the kona server function per request (transmitted, never retained). The kona _response_ is never cached server-side (§5.3); it is cached client-side in the IndexedDB `adpCache` like every other provider's response (§7).
 - `leagueId` (ESPN or Sleeper) is a public identifier and is persisted with settings.
 
 ## 6. VORP, xADP, Deltas, and the Round Rule
@@ -178,13 +179,13 @@ When league-aware is enabled, the league API is the settings authority:
 
 `vorp = projectedPoints − replacementBaseline(position)`, where the baseline is the projected points of the player at a **league-derived replacement rank** per position:
 
-| Position | Replacement rank |
-|---|---|
-| QB | `TEAMS × (STARTING QB + SUPERFLEX)` |
-| RB | `TEAMS × (STARTING RB + FLEX/2)` |
-| WR | `TEAMS × (STARTING WR + FLEX/2)` |
-| TE | `TEAMS × STARTING TE` |
-| DST | `TEAMS × STARTING DST` |
+| Position | Replacement rank                    |
+| -------- | ----------------------------------- |
+| QB       | `TEAMS × (STARTING QB + SUPERFLEX)` |
+| RB       | `TEAMS × (STARTING RB + FLEX/2)`    |
+| WR       | `TEAMS × (STARTING WR + FLEX/2)`    |
+| TE       | `TEAMS × STARTING TE`               |
+| DST      | `TEAMS × STARTING DST`              |
 
 Odd team counts round up to the next even number before ranks are computed (11 teams → 12, 9 teams → 10); ranks then clamp to `[1, position count]`. Baselines recompute live with settings (league size or roster changes propagate to VORP and xADP). Defaults (12 teams, 1/2/3/1 + 1 flex): QB12, RB30, WR42, TE12, DST12. VORP may be negative for below-replacement players. The workbook's own VORP column is **not** used (projections-only rule; its formulas are idiosyncratic).
 
@@ -192,7 +193,7 @@ Odd team counts round up to the next even number before ranks are computed (11 t
 
 Per position, the fit uses matched players **with ADP and positive VORP** (`vorp > 0`); players without ADP are excluded from the fit and displayed with blank ADP/xADP/delta.
 
-**Why positive-VORP only (probe-validated 2026-08-11):** BeatADP consensus ADP × Athletic 0805 half-PPR projections (n=328) compared linear, log-linear, quadratic, cubic, exponential, and power fits. On the **full domain** the log form is the *worst* of the smooth curves — quadratic/cubic fit best (R² ≈ 0.80 on VORP) and log-linear ranks last (R² ≈ 0.75), because 74% of the player pool projects below replacement and a log curve crosses zero far too early (ADP ≈ 50 vs ≈ 75 actual). Restricted to **positive-VORP players** (the top ~80–130, roughly ADP 1–100 — the region where draft value lives), **log-linear is the best fit** in the prediction direction `ln(adp) ~ vorp`: pooled R² = 0.864 (vs 0.60 linear, 0.78 quadratic), per-position QB 0.898 / RB 0.927 / WR 0.903 / TE 0.755. Below-replacement players add no signal — the clamp below maps them to the board tail anyway.
+**Why positive-VORP only (probe-validated 2026-08-11):** BeatADP consensus ADP × Athletic 0805 half-PPR projections (n=328) compared linear, log-linear, quadratic, cubic, exponential, and power fits. On the **full domain** the log form is the _worst_ of the smooth curves — quadratic/cubic fit best (R² ≈ 0.80 on VORP) and log-linear ranks last (R² ≈ 0.75), because 74% of the player pool projects below replacement and a log curve crosses zero far too early (ADP ≈ 50 vs ≈ 75 actual). Restricted to **positive-VORP players** (the top ~80–130, roughly ADP 1–100 — the region where draft value lives), **log-linear is the best fit** in the prediction direction `ln(adp) ~ vorp`: pooled R² = 0.864 (vs 0.60 linear, 0.78 quadratic), per-position QB 0.898 / RB 0.927 / WR 0.903 / TE 0.755. Below-replacement players add no signal — the clamp below maps them to the board tail anyway.
 
 Per-position **log-linear** regression: `ln(adp) = a + b·vorp` via ordinary least squares, per position (QB/RB/WR/TE/DST independently); note `b < 0`. Then
 
@@ -243,7 +244,7 @@ Board columns: **ADP, Name, Position, Team, Projected Points, VORP, xADP, Delta*
 
 ### 8.2 State split
 
-- **Search params** (the acceptance criterion): `q` (text), `pos` (comma-joined positions), `sort` (column key), `dir` (`asc`/`desc`), `steals` (`all` | `steals` | `reaches` | `none`). Board deep-links restore state; back/forward works. Draft-tracking state is *not* in search params.
+- **Search params** (the acceptance criterion): `q` (text), `pos` (comma-joined positions), `sort` (column key), `dir` (`asc`/`desc`), `steals` (`all` | `steals` | `reaches` | `none`). Board deep-links restore state; back/forward works. Draft-tracking state is _not_ in search params.
 - **Zustand** (persisted to IndexedDB via the custom adapter): loaded file, parsed players, settings, drafted set; league-connect fields (`leagueId`, `espn_s2`/`SWID`) are part of the persisted settings slice; which ADP mode is active.
 - **TanStack Query**: ADP fetches (server functions) with the IndexedDB `adpCache` behind them; invalidated by "Refresh ADP" and by settings changes that alter the provider key.
 

@@ -3,6 +3,8 @@ node_modules/
 .output/
 .vinxi/
 .vite/
+.nitro/
+dist/
 routeTree.gen.ts
 .env.local
 deno.d.ts

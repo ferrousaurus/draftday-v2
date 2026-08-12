@@ -2,6 +2,7 @@ import { Alert, Badge, Button, Chip, Container, Group, Paper, Stack, Text, TextI
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { BoardTable, type BoardSort } from '../components/BoardTable.tsx';
+import { boardToCsv, downloadCsv } from '../lib/board-export.ts';
 import { buildBoard } from '../lib/analysis.ts';
 import { adpModeLabel } from '../lib/adp.ts';
 import { parseBoardSearch, POSITIONS, type BoardSearch } from '../lib/board-search.ts';
@@ -126,6 +127,10 @@ function BoardPage() {
     void navigate({ to: '/' });
   };
 
+  const handleExport = () => {
+    downloadCsv('draft-board.csv', boardToCsv(filtered, sortState, draftedSet));
+  };
+
   const beatAdpEmpty = adp.mode.kind === 'beatadp' && adp.records.length === 0 && !adp.isLoading && !adp.isError;
   const adpLoading = adp.isLoading || (adp.isFetching && adp.records.length === 0);
 
@@ -154,6 +159,9 @@ function BoardPage() {
             </Text>
           </div>
           <Group>
+            <Button size="xs" variant="outline" onClick={handleExport} disabled={filtered.length === 0}>
+              Export CSV
+            </Button>
             <Button size="xs" variant="outline" component={Link} to="/">
               Change file / settings
             </Button>

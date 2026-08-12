@@ -93,6 +93,14 @@ export default defineConfig({
     'eslint/arrow-body-style': ['warn', 'as-needed'], // style-implicit-return
     'eslint/prefer-destructuring': 'warn', // style-destructuring-multi
     'eslint/object-shorthand': 'warn', // style-object-shorthand
+
+    // ── TypeScript: param-mutability-ban ───────────────────────────────────
+    // `ReactNode` (children props) is a mutable union by design; exempt it so
+    // components aren't flagged for idiomatic `Readonly<{ children: ReactNode }>`.
+    'typescript/prefer-readonly-parameter-types': [
+      'warn',
+      { allow: [{ from: 'package', name: 'ReactNode', package: 'react' }] },
+    ],
   },
   // The config file itself keeps grouped rule ordering and annotated comments;
   // those formatting pedantries are intentionally relaxed here.
@@ -103,6 +111,14 @@ export default defineConfig({
         'eslint/sort-keys': 'off',
         'eslint/capitalized-comments': 'off',
         'eslint/no-inline-comments': 'off',
+      },
+    },
+    {
+      // Component files are PascalCase (matching their export name) per the
+      // react-best-practices skill's file-naming rule.
+      files: ['src/components/**'],
+      rules: {
+        'unicorn/filename-case': ['warn', { case: 'pascalCase' }],
       },
     },
   ],

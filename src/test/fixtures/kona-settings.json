@@ -1,0 +1,27 @@
+{
+  "settings": {
+    "size": 12,
+    "scoringSettings": {
+      "scoringItems": [
+        { "statId": 3, "points": 0.04, "pointsOverrides": {} },
+        { "statId": 4, "points": 4, "pointsOverrides": {} },
+        { "statId": 20, "points": -2, "pointsOverrides": {} },
+        { "statId": 24, "points": 0.1, "pointsOverrides": {} },
+        { "statId": 25, "points": 6, "pointsOverrides": {} },
+        { "statId": 42, "points": 0.1, "pointsOverrides": {} },
+        { "statId": 43, "points": 6, "pointsOverrides": {} },
+        { "statId": 17, "points": 1, "pointsOverrides": {} },
+        { "statId": 53, "points": 1, "pointsOverrides": {} },
+        { "statId": 55, "points": 2, "pointsOverrides": {} },
+        { "statId": 56, "points": 1, "pointsOverrides": {} },
+        { "statId": 57, "points": 1, "pointsOverrides": {} },
+        { "statId": 63, "points": 6, "pointsOverrides": {} },
+        { "statId": 93, "points": 2, "pointsOverrides": { "16": 2 } }
+      ]
+    },
+    "rosterSettings": {
+      "lineupSlotCounts": { "0": 1, "2": 2, "4": 3, "6": 1, "16": 1, "17": 1, "20": 7, "21": 2, "23": 1 }
+    },
+    "draftSettings": { "keeperCount": 0, "keeperCountFuture": 0, "type": "SNAKE" }
+  }
+}

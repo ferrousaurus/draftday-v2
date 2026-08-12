@@ -9,14 +9,14 @@ Fantasy-football draft-day board ("Draft Day"): upload an Athletic projections w
 
 ## Commands (via `deno task`)
 
-| Command             | Runs                                                                                      | Verified state                                                                                                                             |
-| ------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `dev`               | `vite dev`                                                                                | works — dev server on port 3000                                                                                                            |
-| `check`             | `deno run gen:types && tsc --noEmit`                                                      | passes                                                                                                                                     |
-| `lint`              | `deno run gen:types && oxlint`                                                            | passes (warnings, not errors)                                                                                                              |
-| `fmt` / `fmt:check` | `oxfmt` (single quotes, semis, width 120)                                                | `fmt:check` currently fails (e.g. `src/routes/__root.tsx`); run `deno task fmt` before committing                                          |
-| `test`              | `deno run gen:types && vitest run`                                                        | passes (1 file / 4 tests in `src/test/test-env.test.ts`)                                                                                   |
-| `build` / `start`   | `vite build` (Nitro `deno-deploy` preset → `.output/server/index.mjs`), then `node` on it | build output is gitignored                                                                                                                 |
+| Command             | Runs                                                                                      | Verified state                                                                                    |
+| ------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `dev`               | `vite dev`                                                                                | works — dev server on port 3000                                                                   |
+| `check`             | `deno run gen:types && tsc --noEmit`                                                      | passes                                                                                            |
+| `lint`              | `deno run gen:types && oxlint`                                                            | passes (warnings, not errors)                                                                     |
+| `fmt` / `fmt:check` | `oxfmt` (single quotes, semis, width 120)                                                 | `fmt:check` currently fails (e.g. `src/routes/__root.tsx`); run `deno task fmt` before committing |
+| `test`              | `deno run gen:types && vitest run`                                                        | passes (1 file / 4 tests in `src/test/test-env.test.ts`)                                          |
+| `build` / `start`   | `vite build` (Nitro `deno-deploy` preset → `.output/server/index.mjs`), then `node` on it | build output is gitignored                                                                        |
 
 - `vitest.config.ts` is deliberately separate from `vite.config.ts`: loading `vite.config.ts` into vitest crashes its module-runner (`react` CJS). Don't merge or re-export one from the other.
 - `lint`, `check`, `test` all regenerate **`deno.d.ts`** (`deno types`, ~700KB, gitignored) first. `tsconfig.json` `types` points at it, so `tsc` and oxlint's type-aware backend see `Deno`/`Deno.Kv`/`Temporal` only after regen. If a Deno global is flagged unknown, run `deno run gen:types`.

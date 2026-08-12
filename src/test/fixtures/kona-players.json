@@ -1,0 +1,79 @@
+{
+  "players": [
+    {
+      "player": {
+        "id": 4429795,
+        "fullName": "Jahmyr Gibbs",
+        "proTeamId": 8,
+        "defaultPositionId": 2,
+        "ownership": { "averageDraftPosition": 1.61 },
+        "draftRanksByRankType": {
+          "STANDARD": { "rank": 1 },
+          "PPR": { "rank": 1 },
+          "ELIMINATION": { "rank": 4 },
+          "SUPERFLEX": { "rank": 7 }
+        }
+      }
+    },
+    {
+      "player": {
+        "id": 4429796,
+        "fullName": "Josh Allen",
+        "proTeamId": 2,
+        "defaultPositionId": 1,
+        "ownership": { "averageDraftPosition": 12.4 },
+        "draftRanksByRankType": {
+          "STANDARD": { "rank": 9 },
+          "PPR": { "rank": 10 },
+          "ELIMINATION": { "rank": 11 },
+          "SUPERFLEX": { "rank": 5 }
+        }
+      }
+    },
+    {
+      "player": {
+        "id": 4429797,
+        "fullName": "Ja'Marr Chase",
+        "proTeamId": 4,
+        "defaultPositionId": 3,
+        "ownership": { "averageDraftPosition": 4.2 },
+        "draftRanksByRankType": {
+          "STANDARD": { "rank": 3 },
+          "PPR": { "rank": 2 },
+          "ELIMINATION": { "rank": 6 },
+          "SUPERFLEX": { "rank": 9 }
+        }
+      }
+    },
+    {
+      "player": {
+        "id": 4429798,
+        "fullName": "Brock Bowers",
+        "proTeamId": 13,
+        "defaultPositionId": 4,
+        "ownership": { "averageDraftPosition": 22.7 },
+        "draftRanksByRankType": {
+          "STANDARD": { "rank": 18 },
+          "PPR": { "rank": 16 },
+          "ELIMINATION": { "rank": 19 },
+          "SUPERFLEX": { "rank": 21 }
+        }
+      }
+    },
+    {
+      "player": {
+        "id": 4429799,
+        "fullName": "Broncos D/ST",
+        "proTeamId": 7,
+        "defaultPositionId": 16,
+        "ownership": { "averageDraftPosition": 150.5 },
+        "draftRanksByRankType": {
+          "STANDARD": { "rank": 130 },
+          "PPR": { "rank": 128 },
+          "ELIMINATION": { "rank": 131 },
+          "SUPERFLEX": { "rank": 140 }
+        }
+      }
+    }
+  ]
+}

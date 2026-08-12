@@ -1,0 +1,28 @@
+{
+  "type": "best_ball",
+  "total_rosters": 12,
+  "settings": {
+    "scoring": {
+      "pass_yd": 0.04,
+      "pass_td": 4,
+      "pass_int": -2,
+      "rush_yd": 0.1,
+      "rush_td": 6,
+      "rec_yd": 0.1,
+      "rec_td": 6,
+      "rec_rb": 1,
+      "rec_wr": 1,
+      "rec_te": 1,
+      "dst_sack": 1,
+      "dst_int": 2,
+      "dst_ff": 1,
+      "dst_fr": 1,
+      "dst_safe": 2,
+      "dst_td": 6
+    },
+    "roster": {
+      "starters": ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "SUPER_FLEX", "DEF"],
+      "roster_positions": ["QB", "RB", "WR", "TE", "FLEX", "SUPER_FLEX", "DEF", "BN", "BN", "BN"]
+    }
+  }
+}

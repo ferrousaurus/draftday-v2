@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Fantasy-football draft-day board ("Draft Day"): upload an Athletic projections workbook, pick a platform (ESPN/Yahoo/Sleeper, optionally league-aware), get an ADP/VORP draft board. Currently an early skeleton (2 routes, "Hello, world!"). **The authoritative design doc is `docs/specs/init.md` — read it before implementing features**; workbook format reference is `.agents/skills/reading-athletic-projections/SKILL.md`.
+Fantasy-football draft-day board ("Draft Day"): upload an Athletic projections workbook, pick a platform (ESPN/Yahoo/Sleeper, optionally league-aware), get an ADP/VORP draft board. The core board is implemented (`src/routes/{index,board}.tsx` + `src/lib/*` + `src/server/*`); see `docs/specs/init.md` for the section references sprinkled through the code. **Read `docs/specs/init.md` before implementing features**; workbook format reference is `.agents/skills/reading-athletic-projections/SKILL.md`.
 
 ## Toolchain (Deno-driven)
 
@@ -14,8 +14,8 @@ Fantasy-football draft-day board ("Draft Day"): upload an Athletic projections w
 | `dev`               | `vite dev`                                                                                | works — dev server on port 3000                                                                   |
 | `check`             | `deno run gen:types && tsc --noEmit`                                                      | passes                                                                                            |
 | `lint`              | `deno run gen:types && oxlint`                                                            | passes (warnings, not errors)                                                                     |
-| `fmt` / `fmt:check` | `oxfmt` (single quotes, semis, width 120)                                                 | `fmt:check` currently fails (e.g. `src/routes/__root.tsx`); run `deno task fmt` before committing |
-| `test`              | `deno run gen:types && vitest run`                                                        | passes (1 file / 4 tests in `src/test/test-env.test.ts`)                                          |
+| `fmt` / `fmt:check` | `oxfmt` (single quotes, semis, width 120)                                                 | `fmt:check` currently fails (e.g. `src/components/BoardTable.tsx`); run `deno task fmt` before committing |
+| `test`              | `deno run gen:types && vitest run`                                                        | passes (11 files / 86 tests)                                                                      |
 | `build` / `start`   | `vite build` (Nitro `deno-deploy` preset → `.output/server/index.mjs`), then `node` on it | build output is gitignored                                                                        |
 
 - `vitest.config.ts` is deliberately separate from `vite.config.ts`: loading `vite.config.ts` into vitest crashes its module-runner (`react` CJS). Don't merge or re-export one from the other.
@@ -28,15 +28,17 @@ Fantasy-football draft-day board ("Draft Day"): upload an Athletic projections w
 - `oxlint` uses an **explicit rule list** (no ESLint recommended sets) + type-aware rules (`oxlint-tsgolint` backend, needs the regenerated `deno.d.ts`) + `eslint-plugin-react-you-might-not-need-an-effect` via `jsPlugins`. Rules encode the `ferrousaurus-react-best-practices` / `ferrousaurus-typescript-best-practices` skills: no `React.FC`, no class components, no `any`, no non-null assertions, no nested ternaries, `exhaustive-deps` = error, `type` over `interface`.
 - Formatter is **oxfmt**, not `deno fmt`. Path alias `#/*` → `./src/*`; imports may use `.ts` extensions (`allowImportingTsExtensions`).
 
-## Architecture (per spec — mostly unimplemented)
+## Architecture
 
-- TanStack Start SPA + Nitro `deno-deploy` preset; React 19, Mantine, TanStack Query/Table, Zustand, zod, `@e965/xlsx`, `idb-keyval`.
+- TanStack Start SPA + Nitro `deno-deploy` preset; React 19, Mantine, TanStack Query/Table, Zustand, zod, `@e965/xlsx`, `idb-keyval`. Entrypoint wiring lives in `vite.config.ts`: `tanstackStart({ spa: { enabled: true } })` + `nitro({ preset: 'deno-deploy' })` + `viteReact()`.
+- `src/lib/*` holds the domain logic (workbook parsing, scoring, ADP/VORP analysis, platform matching/variants, board export); `src/server/*` holds the server functions (BeatADP scrape, ESPN kona, Sleeper, Deno KV cache). Routes are `src/routes/{__root,index,board}.tsx`.
 - Workbook parses **client-side**; IndexedDB (`idb-keyval`) is the canonical persistence (including `espn_s2`/`SWID` — never stored server-side). Zustand persists via a custom IndexedDB adapter — no localStorage.
 - ADP flows through server functions: BeatADP HTML scrape (server-side, **Deno KV**-cached with midnight-UTC expiry; in-memory KV in dev/tests) and league-aware ESPN kona endpoint (cookie-authenticated, never cached server-side).
 - Deliberate stack deviations from `ferrousaurus-stack-preferences` (Deno runtime/deploy, Deno as package manager) are app-scoped and documented in spec §10.1 — do not "fix" them.
 
 ## Testing gotchas
 
-- Only `src/test/test-env.test.ts` exists today (validates the env-var schema for ESPN credentials); the spec's oracle/fixture tests (§3.3, synthetic xlsx under `tests/fixtures/`) are not yet implemented. Per spec, the oracle must **skip cleanly when the real workbook is absent** (it's untracked, gitignored under `resources/`).
-- `.env.local` (gitignored) holds `VITE_ESPN_S2`, `VITE_SWID`, `VITE_ESPN_LEAGUE` for the credential-dependent tests; they must skip cleanly when absent. (The Zod schema lives in `src/test/test-env.ts`.) Env-var naming/divergence detail lives in `docs/specs/init.md` §3.3/§10.2.
+- Fixtures live under `src/test/fixtures/` (committed: `synthetic.xlsx`, BeatADP `beatadp-sample.html`, ESPN kona `kona-{settings,players}.json`, Sleeper `sleeper-league.json`) and back the fixture-pinned tests (`parser`, `scoring`, `kona`, `matching`, `analysis`, `beatadp`, `sleeper`, `settings`, `board-export`, `kv-cache`).
+- The real workbook (`resources/2026-FFB-Projections-0805-1.xlsx`, untracked/gitignored) backs the scoring **oracle** in `src/test/scoring.test.ts`; it **skips cleanly when absent** (§3.3). Don't commit the real workbook.
+- `.env.local` (gitignored) holds `VITE_ESPN_S2`, `VITE_SWID`, `VITE_ESPN_LEAGUE` for the ESPN kona live probe in `src/test/kona.test.ts`. The Zod schema in `src/test/test-env.ts` also accepts `VITEST_*` names with **precedence over `VITE_*`**; the probe skips cleanly when absent. Env-var naming/divergence detail lives in `docs/specs/init.md` §3.3/§10.2.
 - Repo-local skills live in `.agents/skills/` (deno, deno-frontend, deno-deploy, xlsx, reading-athletic-projections, ferrousaurus-*) — load them via the skill tool when the task matches.

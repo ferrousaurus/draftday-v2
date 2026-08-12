@@ -4,22 +4,24 @@ Fantasy-football draft-day board ("Draft Day"): upload an Athletic projections w
 
 ## Toolchain (Deno-driven)
 
-- **There is no `deno.json`** — `deno task <name>` executes `scripts` from `package.json` (verified: Deno 2.9 reads them). Deps are managed with `deno install` (`deno.lock` committed; modules live under `node_modules/.deno`). Don't introduce npm/pnpm/yarn commands.
+- `deno.json` holds only `allowScripts` (gating native build deps: `@parcel/watcher`, `esbuild`, `fsevents`); there is no `tasks` key, so `deno task <name>` still executes `scripts` from `package.json`. Deps are managed with `deno install` (`deno.lock` committed; modules live under `node_modules/.deno`). Don't introduce npm/pnpm/yarn commands.
 - `.npmrc` sets `minimum-release-age=3` (deliberate freshness gate).
 
 ## Commands (via `deno task`)
 
-| Command             | Runs                                                                                      | Verified state                                                                                                                                                                                                                                                                |
-| ------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dev`               | `vite dev`                                                                                | works — dev server on port 3000                                                                                                                                                                                                                                               |
-| `check`             | `deno types > deno.d.ts && tsc --noEmit`                                                  | passes                                                                                                                                                                                                                                                                        |
-| `lint`              | regenerates `deno.d.ts`, then `oxlint`                                                    | passes (warnings, not errors)                                                                                                                                                                                                                                                 |
-| `fmt` / `fmt:check` | `oxfmt` (single quotes, semis, width 120)                                                 | `fmt:check` currently fails — committed source is double-quoted; run `deno task fmt` before committing                                                                                                                                                                        |
-| `test`              | `deno run gen:types && vitest run`                                                        | **broken**: crashes loading `vite.config.ts` with `ReferenceError: module is not defined` (react CJS via vite's module-runner; removing `vite.config.ts` makes vitest run clean). No tests exist yet — the config must be fixed before adding the spec's oracle/fixture tests |
-| `build` / `start`   | `vite build` (Nitro `deno-deploy` preset → `.output/server/index.mjs`), then `node` on it | build output is gitignored                                                                                                                                                                                                                                                    |
+| Command             | Runs                                                                                      | Verified state                                                                                                                             |
+| ------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `dev`               | `vite dev`                                                                                | works — dev server on port 3000                                                                                                            |
+| `check`             | `deno run gen:types && tsc --noEmit`                                                      | passes                                                                                                                                     |
+| `lint`              | `deno run gen:types && oxlint`                                                            | passes (warnings, not errors)                                                                                                              |
+| `fmt` / `fmt:check` | `oxfmt` (single quotes, semis, width 120)                                                | `fmt:check` currently fails (e.g. `src/routes/__root.tsx`); run `deno task fmt` before committing                                          |
+| `test`              | `deno run gen:types && vitest run`                                                        | passes (1 file / 4 tests in `src/test/test-env.test.ts`)                                                                                   |
+| `build` / `start`   | `vite build` (Nitro `deno-deploy` preset → `.output/server/index.mjs`), then `node` on it | build output is gitignored                                                                                                                 |
 
+- `vitest.config.ts` is deliberately separate from `vite.config.ts`: loading `vite.config.ts` into vitest crashes its module-runner (`react` CJS). Don't merge or re-export one from the other.
 - `lint`, `check`, `test` all regenerate **`deno.d.ts`** (`deno types`, ~700KB, gitignored) first. `tsconfig.json` `types` points at it, so `tsc` and oxlint's type-aware backend see `Deno`/`Deno.Kv`/`Temporal` only after regen. If a Deno global is flagged unknown, run `deno run gen:types`.
 - `src/routeTree.gen.ts` is generated by the router plugin during dev/build; gitignored — never hand-edit.
+- No `.github/` workflows exist yet; CI expectations (e.g. `deno task -A <name>` for non-interactive permission prompts) are spec-only in `docs/specs/init.md` §10.5.
 
 ## Code conventions (lint-enforced)
 
@@ -35,6 +37,6 @@ Fantasy-football draft-day board ("Draft Day"): upload an Athletic projections w
 
 ## Testing gotchas
 
-- The spec's oracle test reproduces workbook `Custom` points from the `Settings` sheet — it must **skip cleanly when the real workbook is absent** (it's untracked). Committed fixture under `tests/fixtures/` per spec (doesn't exist yet).
-- `.env.local` (gitignored) holds `ESPN_S2`, `SWID`, `VITEST_ESPN_LEAGUE` for league-aware ESPN tests.
+- Only `src/test/test-env.test.ts` exists today (validates the env-var schema for ESPN credentials); the spec's oracle/fixture tests (§3.3, synthetic xlsx under `tests/fixtures/`) are not yet implemented. Per spec, the oracle must **skip cleanly when the real workbook is absent** (it's untracked, gitignored under `resources/`).
+- `.env.local` (gitignored) holds `VITE_ESPN_S2`, `VITE_SWID`, `VITE_ESPN_LEAGUE` for the credential-dependent tests; they must skip cleanly when absent. (The Zod schema lives in `src/test/test-env.ts`.) Env-var naming/divergence detail lives in `docs/specs/init.md` §3.3/§10.2.
 - Repo-local skills live in `.agents/skills/` (deno, deno-frontend, deno-deploy, xlsx, reading-athletic-projections, ferrousaurus-*) — load them via the skill tool when the task matches.

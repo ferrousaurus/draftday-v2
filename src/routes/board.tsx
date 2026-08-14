@@ -4,8 +4,8 @@ import type { AppSettings, BoardPlayer, PlayerRecord, Position } from '../lib/ty
 import { type BoardSearch, POSITIONS, parseBoardSearch } from '../lib/board-search.ts';
 import { type BoardSort, BoardTable } from '../components/BoardTable.tsx';
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
+import { type PlayerFlag, useDraftStore, useFlagsStore, usePlayersStore, useSettingsStore } from '../lib/store.ts';
 import { boardToCsv, downloadCsv } from '../lib/board-export.ts';
-import { useDraftStore, usePlayersStore, useSettingsStore } from '../lib/store.ts';
 import { useMemo, useState } from 'react';
 import { DEFAULT_SETTINGS } from '../lib/settings.ts';
 import { SegmentedField } from '../components/SegmentedField.tsx';
@@ -28,6 +28,9 @@ function BoardPage() {
   const drafted = useDraftStore((s) => s.drafted);
   const toggleDrafted = useDraftStore((s) => s.toggleDrafted);
   const clearDrafted = useDraftStore((s) => s.clearDrafted);
+  const flags = useFlagsStore((s) => s.flags);
+  const toggleFlag = useFlagsStore((s) => s.toggleFlag);
+  const clearFlags = useFlagsStore((s) => s.clearFlags);
 
   const adp = useAdp(settings);
 
@@ -42,6 +45,16 @@ function BoardPage() {
     return buildBoard(players, settings, matched);
   }, [players, settings, matched]);
 
+  const flagsMap = useMemo(() => {
+    const map = new Map<string, PlayerFlag>();
+    for (const [id, flag] of Object.entries(flags)) {
+      if (flag !== undefined) {
+        map.set(id, flag);
+      }
+    }
+    return map;
+  }, [flags]);
+
   const filtered = useMemo(() => {
     const q = search.q.trim().toLowerCase();
     const positions = search.pos === '' ? null : new Set(search.pos.split(','));
@@ -52,27 +65,27 @@ function BoardPage() {
       if (q !== '' && !row.player.name.toLowerCase().includes(q) && !row.player.team.toLowerCase().includes(q)) {
         return false;
       }
-      if (search.steals === 'steals' && !row.steal) {
+      if (search.steals === 'steals' && flagsMap.get(row.player.id) !== 'steal') {
         return false;
       }
-      if (search.steals === 'reaches' && !row.reach) {
+      if (search.steals === 'reaches' && flagsMap.get(row.player.id) !== 'reach') {
         return false;
       }
-      if (search.steals === 'none' && (row.steal || row.reach)) {
+      if (search.steals === 'none' && flagsMap.get(row.player.id) !== undefined) {
         return false;
       }
       return true;
     });
-  }, [board.rows, search.q, search.pos, search.steals]);
+  }, [board.rows, flagsMap, search.q, search.pos, search.steals]);
 
   const draftedSet = useMemo(() => new Set(drafted), [drafted]);
 
   const summary = useMemo(() => {
-    const steals = filtered.filter((r) => r.steal).length;
-    const reaches = filtered.filter((r) => r.reach).length;
+    const steals = filtered.filter((r) => flagsMap.get(r.player.id) === 'steal').length;
+    const reaches = filtered.filter((r) => flagsMap.get(r.player.id) === 'reach').length;
     const noAdp = filtered.filter((r) => r.adp === null);
     return { steals, reaches, noAdp };
-  }, [filtered]);
+  }, [filtered, flagsMap]);
 
   const counters = useMemo(() => computeCounters(drafted, players, settings), [drafted, players, settings]);
 
@@ -87,13 +100,14 @@ function BoardPage() {
   const startOver = async () => {
     await clearAll();
     clearDrafted();
+    clearFlags();
     usePlayersStore.getState().setPlayers(null);
     useSettingsStore.getState().replaceSettings({ ...DEFAULT_SETTINGS });
     void navigate({ to: '/' });
   };
 
   const handleExport = () => {
-    downloadCsv('draft-board.csv', boardToCsv(filtered, sortState, draftedSet));
+    downloadCsv('draft-board.csv', boardToCsv(filtered, sortState, draftedSet, flagsMap));
   };
 
   const beatAdpEmpty = adp.mode.kind === 'beatadp' && adp.records.length === 0 && !adp.isLoading && !adp.isError;
@@ -135,6 +149,8 @@ function BoardPage() {
             rows={filtered}
             drafted={draftedSet}
             onToggleDrafted={toggleDrafted}
+            flags={flagsMap}
+            onToggleFlag={toggleFlag}
             sort={sortState}
             onSortChange={(sort) =>
               updateSearch(
@@ -372,7 +388,7 @@ function renderDraftSummary(
           {flexSurplus.sfMax > 0 ? ` · SF ${flexSurplus.sf}/${flexSurplus.sfMax}` : ''}
         </Text>
         <Text size="xs" c="dimmed">
-          Click a row to mark drafted; click again to undo (§8.1)
+          Use the Drafted button in the Flag column to mark drafted; click again to undo (§8.1)
         </Text>
       </Group>
     </Paper>

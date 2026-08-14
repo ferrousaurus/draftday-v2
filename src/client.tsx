@@ -1,4 +1,4 @@
-import "#/styles/index.css";
+import '#/styles/index.css';
 
 import { StrictMode, startTransition } from 'react';
 import { StartClient } from '@tanstack/react-start/client';

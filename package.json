@@ -47,19 +47,19 @@
     "vite": "8.2.1",
     "vitest": "^4.1.10"
   },
-  "engines": {
-    "deno": ">=2.9 <3"
-  },
   "devEngines": {
-    "runtime": {
-      "name": "deno",
-      "version": "^2.0.0",
-      "onFail": "download"
-    },
     "packageManager": {
       "name": "deno",
       "version": "^2.0.0",
       "onFail": "download"
+    },
+    "runtime": {
+      "name": "deno",
+      "version": "^2.0.0",
+      "onFail": "download"
     }
+  },
+  "engines": {
+    "deno": ">=2.9 <3"
   }
 }

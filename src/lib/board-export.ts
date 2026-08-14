@@ -1,9 +1,10 @@
 /**
  * CSV export of the visible draft board: mirrors the table's current rows,
- * sort (including nulls-last semantics matching BoardTable, §6.4) and drafted
- * state into a `draft-board.csv` download.
+ * sort (including nulls-last semantics matching BoardTable, §6.4), drafted
+ * and flag state into a `draft-board.csv` download.
  */
 import type { BoardPlayer } from './types.ts';
+import type { PlayerFlag } from './store.ts';
 
 export type BoardExportSort = Readonly<{ id: string; desc: boolean }> | null;
 
@@ -25,12 +26,17 @@ const STRING_ACCESSORS: Record<string, (row: BoardPlayer) => string> = {
   team: (r) => r.player.team,
 };
 
-const HEADERS = ['ADP', 'Name', 'Pos', 'Team', 'Proj Pts', 'VORP', 'xADP', 'Delta', 'Drafted'];
+const HEADERS = ['ADP', 'Name', 'Pos', 'Team', 'Proj Pts', 'VORP', 'xADP', 'Delta', 'Drafted', 'Flag'];
 
 /** Serialize rows (sorted to match the visible table) as RFC 4180 CSV with a UTF-8 BOM for Excel. */
-export function boardToCsv(rows: readonly BoardPlayer[], sort: BoardExportSort, drafted: ReadonlySet<string>): string {
+export function boardToCsv(
+  rows: readonly BoardPlayer[],
+  sort: BoardExportSort,
+  drafted: ReadonlySet<string>,
+  flags: ReadonlyMap<string, PlayerFlag>,
+): string {
   const sorted = sort === null ? [...rows] : [...rows].sort(compareRows(sort));
-  const lines = [HEADERS, ...sorted.map((row) => csvRow(row, drafted))];
+  const lines = [HEADERS, ...sorted.map((row) => csvRow(row, drafted, flags))];
   return `\uFEFF${lines.map((line) => line.map((cell) => csvEscape(cell)).join(',')).join('\r\n')}`;
 }
 
@@ -68,7 +74,7 @@ function compareNumbers(a: number, b: number, dir: number): number {
   return (a < b ? -1 : 1) * dir;
 }
 
-function csvRow(row: BoardPlayer, drafted: ReadonlySet<string>): string[] {
+function csvRow(row: BoardPlayer, drafted: ReadonlySet<string>, flags: ReadonlyMap<string, PlayerFlag>): string[] {
   return [
     formatNullable(row.adp),
     row.player.name,
@@ -79,7 +85,18 @@ function csvRow(row: BoardPlayer, drafted: ReadonlySet<string>): string[] {
     formatNullable(row.xadp),
     formatNullable(row.delta),
     drafted.has(row.player.id) ? 'Y' : 'N',
+    flagLabel(flags.get(row.player.id)),
   ];
+}
+
+function flagLabel(flag: PlayerFlag | undefined): string {
+  if (flag === 'steal') {
+    return 'Steal';
+  }
+  if (flag === 'reach') {
+    return 'Reach';
+  }
+  return '';
 }
 
 function formatNullable(value: number | null): string {

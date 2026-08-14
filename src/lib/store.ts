@@ -1,7 +1,7 @@
 /**
  * Zustand stores (§8.2), persisted to IndexedDB via the custom adapter (§7).
- * `settings` and `drafted` are the persisted slices; file/players/adpCache live
- * in idb-keyval directly (§7). No localStorage.
+ * `settings`, `drafted`, and `flags` are the persisted slices; file/players/
+ * adpCache live in idb-keyval directly (§7). No localStorage.
  */
 import type { AppSettings, PlayerRecord, RosterSettings, ScoringSettings } from './types.ts';
 import { createJSONStorage, persist } from 'zustand/middleware';
@@ -81,3 +81,38 @@ export const usePlayersStore = create<PlayersState>()((set) => ({
   players: null,
   setPlayers: (players) => set({ players }),
 }));
+
+export type PlayerFlag = 'steal' | 'reach';
+
+type FlagsState = {
+  flags: Partial<Record<string, PlayerFlag>>;
+  toggleFlag: (playerId: string, flag: PlayerFlag) => void;
+  clearFlags: () => void;
+};
+
+export const useFlagsStore = create<FlagsState>()(
+  persist(
+    (set) => ({
+      flags: {},
+      toggleFlag: (playerId, flag) => {
+        set((state) => {
+          const next = { ...state.flags };
+          if (next[playerId] === flag) {
+            delete next[playerId];
+          } else {
+            next[playerId] = flag;
+          }
+          return { flags: next };
+        });
+      },
+      clearFlags: () => {
+        set({ flags: {} });
+      },
+    }),
+    {
+      name: 'flags',
+      storage: createJSONStorage(() => createIndexedDbStorage('draftday')),
+      partialize: (state) => ({ flags: state.flags }),
+    },
+  ),
+);

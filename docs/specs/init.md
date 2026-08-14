@@ -1,6 +1,6 @@
 # Draft Day — Specification
 
-A web application to help a user on Draft Day for their Fantasy Football league. The user uploads a rankings/projections workbook (The Athletic format), selects a draft platform (ESPN, Yahoo, or Sleeper), optionally connects their league, and gets an interactive draft board that cross-references the file's projections with live ADP from the selected platform (or the league itself when league-aware), surfacing players whose ADP lags or leads their projected value (steals and reaches).
+A web application to help a user on Draft Day for their Fantasy Football league. The user uploads a rankings/projections workbook (The Athletic format), selects a draft platform (ESPN, Yahoo, or Sleeper), optionally connects their league, and gets an interactive draft board that cross-references the file's projections with live ADP from the selected platform (or the league itself when league-aware), letting the user flag players as steals or reaches as ADP moves around the projections.
 
 This document is the authoritative, non-vague specification. The workbook format reference lives in `.agents/skills/reading-athletic-projections/SKILL.md` (the canonical description of `resources/2026-FFB-Projections-0805-1.xlsx`); this spec defines how the app consumes it.
 
@@ -14,7 +14,7 @@ This document is the authoritative, non-vague specification. The workbook format
 4. League-aware ESPN requires `leagueId` + `espn_s2`/`SWID` and **locks** the scoring/roster settings to the league's own settings (§5.4). League-aware Sleeper requires only `leagueId` (public API) and locks scoring likewise. Yahoo has no league-aware mode.
 5. ADP is fetched through server functions (§5): league-aware ESPN uses the league-scoped kona endpoint; every other mode uses BeatADP (platform column, Consensus fallback).
 6. The app computes VORP per player (§6) and navigates to the **draft board** (`/board`) — immediately, without waiting for ADP; xADP and deltas populate once ADP arrives, with skeleton/empty placeholders while it loads (§8.1).
-7. The board is a sortable/filterable data table, default-sorted by ADP, with steals accented and reaches dimmed (§6.4, §8), plus minimal draft-day pick tracking (§8.1).
+7. The board is a sortable/filterable data table, default-sorted by ADP, with user-flagged steals accented and reaches dimmed (§6.4, §8), plus minimal draft-day pick tracking (§8.1).
 
 Settings changes recompute Projected Points, VORP, xADP, and deltas **live, client-side** — no server round-trip for recomputation; xADP and deltas also update when ADP (re)arrives. A `scoringFormat` change (via the PPR chip, a Custom-mode RECEPTIONS stepper, or a league-aware lock) additionally refetches ADP — it alters the BeatADP URL and the provider key, §8.2. Season is passed only to the kona fetch: in league-aware ESPN a season change refetches ADP, which transitively refits the isotonic mapping and changes xADP and deltas; BeatADP is seasonless, so season never affects ADP there. Projected Points and VORP never depend on season or ADP, §5.3.
 
@@ -195,19 +195,18 @@ Per position, xADP comes from an **isotonic (monotone) regression** of ADP on VO
 
 ### 6.3 Deltas & steal/reach flags
 
-- `delta = adp − xadp` (picks; positive = market drafts the player later than his projections imply).
-- Above-replacement players (`vorp > 0`) of **all positions** are bucketed by ADP round (a round is `TEAMS` picks, `bucket = floor((adp − 1) / TEAMS)`). Within each bucket, up to **3 steals** and up to **3 reaches** flag: the strongest candidates at or past the **strong floor** — a quarter-round, `strongFloor = max(2, ⌈TEAMS/4⌉)` picks (3 at 12 teams) — rank first; if a side comes up short, the next-best candidates at or past the **fill floor** — `fillFloor = max(1, ⌊TEAMS/8⌋)` picks (1 at 12 teams) — top up the remaining slots, so every round surfaces suggestions without flagging sub-1-pick noise. Ties break by delta, then ADP, then name, so the output is deterministic. A side never fills from the opposite sign: a round the market overpays wholesale shows reaches only, never fabricated steals.
+- `delta = adp − xadp` (picks; positive = market drafts the player later than his projections imply). Deltas are a display column only — no flags are derived from them.
+- **Manual flags:** the user flags players as steal or reach via the Flag column's two buttons (§8.1). Flags are strictly exclusive — exactly one flag per player, steal XOR reach XOR none — keyed by player id and persisted under the `flags` store slice (§7). Flags are independent of drafted state; when both apply, the drafted row styling wins (§8.1).
 - **Steal** → accented. **Reach** → dimmed. Accenting is binary; no gradient in v1.
-- Flags are **per-round-relative, spanning positions**: deltas are already position-relative (the per-position isotonic xADP mapping absorbs systematic market-vs-projection gaps — one league's ADP can overpay entire early rounds against the projections file, §6.2), and ranking those deltas within each round keeps advice relative to the player's draft neighborhood. A round never floods with flags (the 3-per-side cap), and buckets whose deltas are all sub-noise flag nothing.
-- Flags are **value signals**: they apply only to above-replacement players (`vorp > 0`) — below-replacement ADP is idiosyncratic tail noise (handcuffs, dart throws). Bench players keep their xADP/delta columns but never flag. Players without xADP (no ADP anchor, or under-sampled position) flag nothing.
+- The "Steals / reaches" filter and the summary counts read the manual flags (§6.4).
 
 ### 6.4 Display
 
-Board columns: **ADP, Name, Position, Team, Projected Points, VORP, xADP, Delta**. Default sort: ADP ascending, nulls last. Players without ADP show blanks and sort to the bottom regardless of direction. While ADP is being fetched, the ADP and xADP columns show a skeleton (§8.1); VORP and Projected Points render immediately.
+Board columns: **ADP, Name, Position, Team, Projected Points, VORP, xADP, Delta, Flag**. Default sort: ADP ascending, nulls last. Players without ADP show blanks and sort to the bottom regardless of direction. While ADP is being fetched, the ADP and xADP columns show a skeleton (§8.1); VORP and Projected Points render immediately.
 
 - **ADP-source labeling:** the board header line shows the active source ("ADP: ESPN league · fetched 14:32", "ADP: BeatADP Yahoo · fetched 14:32", …). Consensus-fallback cells carry an indicator (superscript † with tooltip + column-header legend: "† Consensus ADP — not available for [platform]").
 - **"N players without ADP"** note; expands to the list of names/teams/positions (unmatched players, BeatADP-uncovered DSTs, etc.). A DST footnote explains BeatADP modes lack defenses entirely (§5.2).
-- **Steals/reaches summary:** counts of steals and reaches reflecting the current filters.
+- **Steals/reaches summary:** counts of manually flagged steals and reaches reflecting the current filters.
 - **Draft tracking (§8.1):** marked-drafted rows render struck-through/dimmed; a per-position counter strip shows drafted vs. starter slots.
 
 ## 7. Persistence & Restore
@@ -219,8 +218,9 @@ Board columns: **ADP, Name, Position, Team, Projected Points, VORP, xADP, Delta*
 - `settings` — the full settings object (§3.2), including platform, league-aware, leagueId, `espn_s2`/`SWID`, draftType, season; never stored server-side or in any cache
 - `adpCache` — `(provider key)` → `{ data, fetchedAt }`, **expiring at midnight UTC** (the BeatADP server Deno KV cache is midnight-UTC, §5.2; kona has no server-side cache at all, §5.3 — the client cache is midnight-UTC for both providers, computed by the same `msUntilNextUtcMidnight` helper)
 - `drafted` — the set of marked-drafted player ids (§8.1)
+- `flags` — manual steal/reach flags, id → `'steal'` | `'reach'` (§6.3)
 
-**Zustand** holds the working state and persists via its `persist` middleware with a **custom IndexedDB adapter** (implements `getItem`/`setItem`/`removeItem` over idb-keyval). No localStorage anywhere. `espn_s2`/`SWID` are persisted with settings in the IndexedDB slice (§5.5).
+**Zustand** holds the working state and persists via its `persist` middleware with a **custom IndexedDB adapter** (implements `getItem`/`setItem`/`removeItem` over idb-keyval), storing the `settings`, `drafted`, and `flags` slices under their own keys. No localStorage anywhere. `espn_s2`/`SWID` are persisted with settings in the IndexedDB slice (§5.5).
 
 **Restore flow:** on load, if `file` + `players` + `settings` exist → navigate straight to `/board` with everything restored; the board offers "Change file / settings" (→ `/`) and "Start over" (clears IndexedDB). Otherwise land on `/` with the dropzone. Uploading a new file replaces `file`/`players`, **keeps settings** (the workbook never pre-fills or overrides settings), recomputes everything, and re-fetches ADP.
 
@@ -231,12 +231,12 @@ Board columns: **ADP, Name, Position, Team, Projected Points, VORP, xADP, Delta*
 ### 8.1 Routes (Tanstack Router, SPA mode)
 
 - `/` — setup: dropzone, **platform selector** (ESPN/Yahoo/Sleeper), **league-aware toggle** (ESPN/Sleeper only — hidden for Yahoo), conditional fields (ESPN league-aware: `leagueId` + `espn_s2` + `SWID`; Sleeper league-aware: `leagueId` only), **draftType select** (options per platform; locked to league type when league-aware, §5.4), settings panel (§3.2, locked where league-aware), season. `qbType` and `scoringFormat` are derived and shown read-only. Successful setup auto-navigates to `/board` **immediately** — ADP loads on the board: the ADP column shows a skeleton while fetching; xADP shows a skeleton while ADP is being fetched (VORP never waits on ADP, §6.1); VORP and Projected Points render immediately; Delta renders once ADP and xADP are both present (§5.5 for failures).
-- `/board` — the draft board: data table (Tanstack Table + Mantine), position filter chips, search box, sortable headers, "Refresh ADP" button, steals/reaches summary, ADP-source label (§6.4), draft tracking (click a row to mark drafted, click again to undo; per-position counters; state persisted under `drafted`).
+- `/board` — the draft board: data table (Tanstack Table + Mantine), position filter chips, search box, sortable headers, Flag column (Steal/Reach toggle buttons per row, §6.3), "Refresh ADP" button, steals/reaches summary, ADP-source label (§6.4), draft tracking (a Drafted button in the Flag column toggles drafted, independent of steal/reach flags; per-position counters; state persisted under `drafted`).
 
 ### 8.2 State split
 
-- **Search params** (the acceptance criterion): `q` (text), `pos` (comma-joined positions), `sort` (column key), `dir` (`asc`/`desc`), `steals` (`all` | `steals` | `reaches` | `none`). Board deep-links restore state; back/forward works. Draft-tracking state is _not_ in search params.
-- **Zustand** (persisted to IndexedDB via the custom adapter): loaded file, parsed players, settings, drafted set; league-connect fields (`leagueId`, `espn_s2`/`SWID`) are part of the persisted settings slice; which ADP mode is active.
+- **Search params** (the acceptance criterion): `q` (text), `pos` (comma-joined positions), `sort` (column key), `dir` (`asc`/`desc`), `steals` (`all` | `steals` | `reaches` | `none`). Board deep-links restore state; back/forward works. Draft-tracking state is _not_ in search params. The `steals` param name is unchanged but now filters **manual flags** (§6.3), so existing deep links stay valid.
+- **Zustand** (persisted to IndexedDB via the custom adapter): loaded file, parsed players, settings, drafted set, manual flags (id → `'steal'` | `'reach'`, §6.3); league-connect fields (`leagueId`, `espn_s2`/`SWID`) are part of the persisted settings slice; which ADP mode is active.
 - **TanStack Query**: ADP fetches (server functions) with the IndexedDB `adpCache` behind them; invalidated by "Refresh ADP" and by settings changes that alter the provider key.
 
 ## 9. Design Notes & Known Limitations
@@ -292,7 +292,7 @@ Validation, injection, and secret hygiene are handled by **Varlock** (varlock.de
 5. ADP is fetched through server functions: kona for league-aware ESPN (cookie-authenticated; **never cached server-side** — cached client-side in the IndexedDB `adpCache`, §7) and BeatADP for every other mode (server-side scraped, **Deno KV-cached** with midnight-UTC expiry via the `expireIn` option in milliseconds; in dev the same code path runs against Deno's in-memory KV backing); failures surface with a retry and the board stays usable.
 6. Consensus fallback works: a player missing platform ADP shows Consensus ADP tagged with the indicator; a player missing both shows blanks.
 7. The board shows ADP, Name, Position, Team, Projected Points, VORP, xADP, and Delta; default-sorted by ADP with nulls last; ADP-source label present; DST rows blank-with-footnote in BeatADP modes.
-8. Steals are accented and reaches dimmed, where per 12-pick round bucket spanning all positions the top-3 steals (delta ≥ 3 picks, topped up from delta ≥ 1) and bottom-3 reaches (delta ≤ −3, topped up from delta ≤ −1) among above-replacement players flag — round 1 included; deltas come from the per-position isotonic xADP mapping over all ADP-bearing players, any VORP sign (§6.2), with the ≥5-sample rule.
+8. Manual steal/reach flags work: the Flag column's Steal/Reach buttons flag a row (steal → accented, reach → dimmed, §6.4) and clicking the active button again unflags it; flags are strictly exclusive per player (setting steal clears reach and vice versa); flagged state survives reload from IndexedDB (the `flags` slice, §7) and exports as the CSV `Flag` column (`Steal`/`Reach`/empty).
 9. Filter/search/sort state (`q`, `pos`, `sort`, `dir`, `steals`) is managed with search params; board deep-links restore that state.
 10. Draft tracking works: mark/undo drafted, counters update, state survives reload from IndexedDB.
 11. Reloading restores the session from IndexedDB without re-uploading; "Start over" clears it; ESPN league-aware credentials persist with settings (surviving tab close and reload), so reopening restores league-aware mode — degradation to BeatADP with a banner occurs only when credentials are absent or rejected.

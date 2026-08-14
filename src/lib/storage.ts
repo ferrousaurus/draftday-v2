@@ -2,8 +2,8 @@
  * Persistence (§7): IndexedDB via idb-keyval is the canonical store.
  * Keys: `file` (raw upload), `players` (parsed table), `adpCache` (provider
  * responses, midnight-UTC expiry), plus the zustand persist slices
- * (`settings`, `drafted`) which use the custom IndexedDB adapter below.
- * No localStorage anywhere.
+ * (`settings`, `drafted`, `flags`) which use the custom IndexedDB adapter
+ * below. No localStorage anywhere.
  */
 import type { AdpRecord, PlayerRecord } from './types.ts';
 import { del, get, set } from 'idb-keyval';
@@ -159,7 +159,14 @@ export function createIndexedDbStorage(name: string): StateStorage {
 
 /** Wipe everything ("Start over", §7). */
 export async function clearAll(): Promise<void> {
-  await Promise.all([clearFile(), del(PLAYERS_KEY), del(ADP_CACHE_KEY), del('settings:state'), del('drafted:state')]);
+  await Promise.all([
+    clearFile(),
+    del(PLAYERS_KEY),
+    del(ADP_CACHE_KEY),
+    del('settings:state'),
+    del('drafted:state'),
+    del('flags:state'),
+  ]);
 }
 
 export function ttlUntilMidnight(): number {

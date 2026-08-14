@@ -127,8 +127,6 @@ export type BoardPlayer = {
   adpSource: AdpSource | null;
   xadp: number | null;
   delta: number | null;
-  steal: boolean;
-  reach: boolean;
 };
 
 /** League settings locked from a provider (league-aware mode, §5.4). */

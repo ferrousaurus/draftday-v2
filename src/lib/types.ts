@@ -131,15 +131,6 @@ export type BoardPlayer = {
   reach: boolean;
 };
 
-/** Per-position regression outcome (§6.2). */
-export type RegressionResult = {
-  position: Position;
-  a: number;
-  b: number;
-  maxAdp: number;
-  sample: number;
-};
-
 /** League settings locked from a provider (league-aware mode, §5.4). */
 export type LeagueSettings = {
   leagueSize: number;

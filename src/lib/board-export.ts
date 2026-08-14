@@ -28,14 +28,10 @@ const STRING_ACCESSORS: Record<string, (row: BoardPlayer) => string> = {
 const HEADERS = ['ADP', 'Name', 'Pos', 'Team', 'Proj Pts', 'VORP', 'xADP', 'Delta', 'Drafted'];
 
 /** Serialize rows (sorted to match the visible table) as RFC 4180 CSV with a UTF-8 BOM for Excel. */
-export function boardToCsv(
-  rows: ReadonlyArray<BoardPlayer>,
-  sort: BoardExportSort,
-  drafted: ReadonlySet<string>,
-): string {
+export function boardToCsv(rows: readonly BoardPlayer[], sort: BoardExportSort, drafted: ReadonlySet<string>): string {
   const sorted = sort === null ? [...rows] : [...rows].sort(compareRows(sort));
   const lines = [HEADERS, ...sorted.map((row) => csvRow(row, drafted))];
-  return '\uFEFF' + lines.map((line) => line.map(csvEscape).join(',')).join('\r\n');
+  return `\uFEFF${lines.map((line) => line.map((cell) => csvEscape(cell)).join(',')).join('\r\n')}`;
 }
 
 function compareRows(sort: Readonly<{ id: string; desc: boolean }>): (a: BoardPlayer, b: BoardPlayer) => number {
@@ -45,20 +41,30 @@ function compareRows(sort: Readonly<{ id: string; desc: boolean }>): (a: BoardPl
     if (nullsLast !== undefined) {
       const va = nullsLast(a);
       const vb = nullsLast(b);
-      if (va === null && vb === null) return 0;
-      if (va === null) return 1;
-      if (vb === null) return -1;
+      if (va === null && vb === null) {
+        return 0;
+      }
+      if (va === null) {
+        return 1;
+      }
+      if (vb === null) {
+        return -1;
+      }
       return compareNumbers(va, vb, dir);
     }
     const numeric = NUMERIC_ACCESSORS[sort.id];
-    if (numeric !== undefined) return compareNumbers(numeric(a), numeric(b), dir);
+    if (numeric !== undefined) {
+      return compareNumbers(numeric(a), numeric(b), dir);
+    }
     const str = STRING_ACCESSORS[sort.id];
-    return str !== undefined ? str(a).localeCompare(str(b)) * dir : 0;
+    return str === undefined ? 0 : str(a).localeCompare(str(b)) * dir;
   };
 }
 
 function compareNumbers(a: number, b: number, dir: number): number {
-  if (a === b) return 0;
+  if (a === b) {
+    return 0;
+  }
   return (a < b ? -1 : 1) * dir;
 }
 
@@ -82,7 +88,9 @@ function formatNullable(value: number | null): string {
 
 /** RFC 4180 quoting: quote only when needed, doubling embedded quotes. */
 function csvEscape(value: string): string {
-  if (/[",\n\r]/.test(value)) return '"' + value.replace(/"/g, '""') + '"';
+  if (/[",\n\r]/u.test(value)) {
+    return `"${value.replaceAll('"', '""')}"`;
+  }
   return value;
 }
 
@@ -92,7 +100,7 @@ export function downloadCsv(filename: string, csv: string): void {
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = filename;
-  document.body.appendChild(anchor);
+  document.body.append(anchor);
   anchor.click();
   anchor.remove();
   // Deferred revoke for Safari, which aborts the download on immediate revocation.

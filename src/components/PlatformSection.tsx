@@ -1,7 +1,7 @@
 import { Alert, Button, Group, Paper, Select, Stack, Text, TextInput } from '@mantine/core';
-import type { AppSettings } from '../lib/types.ts';
-import { deriveQbType, deriveScoringFormat, DRAFT_TYPES_BY_PLATFORM } from '../lib/settings.ts';
+import { deriveQbType, deriveScoringFormat } from '../lib/settings.ts';
 import { draftTypeOptions, platformHasLeagueAware, scoringFormatLabel } from '../lib/adp.ts';
+import type { AppSettings } from '../lib/types.ts';
 import { SegmentedField } from './SegmentedField.tsx';
 
 type PlatformSectionProps = {
@@ -106,11 +106,11 @@ export function PlatformSection({
                   : 'The Sleeper league API is public.'}
               </Text>
             </Group>
-            {connectError !== null ? (
+            {connectError === null ? null : (
               <Alert color="red" title="League connection failed">
                 {connectError}
               </Alert>
-            ) : null}
+            )}
           </Stack>
         ) : null}
 
@@ -121,7 +121,9 @@ export function PlatformSection({
           data={draftTypes.map((t) => ({ value: t, label: t }))}
           onChange={(v) => {
             const match = draftTypes.find((t) => t === v);
-            if (match !== undefined) patch({ draftType: match });
+            if (match !== undefined) {
+              patch({ draftType: match });
+            }
           }}
           disabled={locked || settings.platform === 'ESPN'}
           description={settings.platform === 'ESPN' ? 'ESPN only exposes redraft' : undefined}
@@ -135,4 +137,4 @@ export function PlatformSection({
   );
 }
 
-export { DRAFT_TYPES_BY_PLATFORM };
+export { DRAFT_TYPES_BY_PLATFORM } from '../lib/settings.ts';

@@ -44,6 +44,11 @@ export default defineConfig({
 
     // ── React: module-one-export-per-file (components) ─────────────────────
     'react/no-multi-comp': 'warn',
+    // TanStack Table cell/header renderers are render props by design (they
+    // receive { getValue, row } from the library); `allowAsProps` is the
+    // rule's sanctioned escape hatch for exactly this pattern. Components
+    // defined and used as JSX inside render still flag.
+    'react/no-unstable-nested-components': ['warn', { allowAsProps: true }],
 
     // ── React: effect-* rules (useEffect only for external systems) ────────
     'react-you-might-not-need-an-effect/no-derived-state': 'error',
@@ -94,13 +99,51 @@ export default defineConfig({
     'eslint/prefer-destructuring': 'warn', // style-destructuring-multi
     'eslint/object-shorthand': 'warn', // style-object-shorthand
 
-    // ── TypeScript: param-mutability-ban ───────────────────────────────────
-    // `ReactNode` (children props) is a mutable union by design; exempt it so
-    // components aren't flagged for idiomatic `Readonly<{ children: ReactNode }>`.
-    'typescript/prefer-readonly-parameter-types': [
-      'warn',
-      { allow: [{ from: 'package', name: 'ReactNode', package: 'react' }] },
-    ],
+    // ── Recalibrated noise rules (2026-08-13) ──────────────────────────────
+    // Each relaxation is deliberate; the strict versions churn the diff
+    // without catching real defects. Meaningful type/correctness rules above
+    // (no-explicit-any, no-non-null-assertion, no-nested-ternary, prefer-const,
+    // no-param-reassign, rules-of-hooks, exhaustive-deps, ...) stay active.
+
+    // Short math identifiers (`p`, `v`, `t`, `s`) are idiomatic in the
+    // analysis/scoring code; renaming them hurts readability.
+    'eslint/id-length': 'off',
+    // Scoring rates, workbook column indices, and test fixtures are domain
+    // constants; enumerating them as named constants is churn without value.
+    'eslint/no-magic-numbers': 'off',
+    // Fights oxfmt, which emits one `const` per line.
+    'eslint/one-var': 'off',
+    // No formatter support for key ordering; pure diff churn.
+    'eslint/sort-keys': 'off',
+    // Ternary is idiomatic here; `no-nested-ternary` (error) still guards the
+    // genuinely confusing cases.
+    'eslint/no-ternary': 'off',
+    // Idiomatic early-continue in loops over player data.
+    'eslint/no-continue': 'off',
+    // The domain model uses `null` (storage round-trips, JSON payloads);
+    // migrating to `undefined` is out of scope.
+    'unicorn/no-null': 'off',
+    // `Array#toSorted` needs the ES2023 lib; tsconfig targets ES2022.
+    'unicorn/no-array-sort': 'off',
+    // Callback-heavy functional style flags on every filter/map/find; the
+    // actual mutation safety is enforced by no-param-reassign.
+    'typescript/prefer-readonly-parameter-types': 'off',
+    // Mechanical noise on every void-returning arrow handler.
+    'typescript/no-confusing-void-expression': 'off',
+    // Comment-case and inline-comment pedantry (previously only relaxed for
+    // this config file itself); treated as noise everywhere.
+    'eslint/capitalized-comments': 'off',
+    'eslint/no-inline-comments': 'off',
+
+    // ── Recalibrated complexity limits (2026-08-13) ────────────────────────
+    // Analysis/board code is data-shape-heavy; the default limits flag
+    // legitimate functions. Limits stay active, just realistic.
+    'eslint/max-lines-per-function': ['warn', 150],
+    'eslint/max-statements': ['warn', 30],
+    'eslint/max-lines': ['warn', 500],
+    'eslint/max-params': ['warn', 6],
+    'eslint/max-depth': ['warn', 6],
+    'react/jsx-max-depth': ['warn', { max: 4 }],
   },
   // The config file itself keeps grouped rule ordering and annotated comments;
   // those formatting pedantries are intentionally relaxed here.

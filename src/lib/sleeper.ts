@@ -39,78 +39,39 @@ const POSITION_SLOT_IDS = ['QB', 'RB', 'WR', 'TE', 'DEF', 'FLEX', 'SUPER_FLEX'] 
 
 /** Accepts `unknown` and parses defensively (no type assertions). */
 export function mapSleeperLeague(json: unknown): LeagueSettings | null {
-  let type: unknown;
-  let totalRosters: unknown;
-  let scoring: unknown;
-  let starters: unknown;
-  for (const [key, value] of entriesOf(json)) {
-    if (key === 'type') type = value;
-    if (key === 'total_rosters') totalRosters = value;
-    if (key === 'settings') {
-      for (const [k, v] of entriesOf(value)) {
-        if (k === 'scoring') scoring = v;
-        if (k === 'roster') {
-          for (const [rk, rv] of entriesOf(v)) {
-            if (rk === 'starters') starters = rv;
-          }
-        }
-      }
-    }
+  const entries = new Map(entriesOf(json));
+  const type = entries.get('type');
+  const totalRosters = entries.get('total_rosters');
+  const settingsEntries = new Map(entriesOf(entries.get('settings')));
+  const scoring = settingsEntries.get('scoring');
+  const starters = new Map(entriesOf(settingsEntries.get('roster'))).get('starters');
+  if (typeof totalRosters !== 'number') {
+    return null;
   }
-  if (typeof totalRosters !== 'number') return null;
   const scoringMap = new Map<string, number>();
   for (const [key, rate] of entriesOf(scoring)) {
-    if (typeof rate === 'number') scoringMap.set(key, rate);
-  }
-  const appScoring = { ...sleeperDefaultScoring() };
-  for (const [key, field] of Object.entries(SLEEPER_SCORING_KEYS)) {
-    const rate = scoringMap.get(key);
-    if (rate !== undefined) appScoring[field] = rate;
-  }
-
-  const counts = { qb: 0, rb: 0, wr: 0, te: 0, dst: 0, flex: 0, superflex: 0 };
-  if (Array.isArray(starters)) {
-    for (const slot of starters) {
-      if (typeof slot !== 'string') continue;
-      switch (slot) {
-        case 'QB':
-          counts.qb += 1;
-          break;
-        case 'RB':
-          counts.rb += 1;
-          break;
-        case 'WR':
-          counts.wr += 1;
-          break;
-        case 'TE':
-          counts.te += 1;
-          break;
-        case 'DEF':
-          counts.dst += 1;
-          break;
-        case 'FLEX':
-          counts.flex += 1;
-          break;
-        case 'SUPER_FLEX':
-          counts.superflex += 1;
-          break;
-      }
+    if (typeof rate === 'number') {
+      scoringMap.set(key, rate);
     }
   }
-
+  const appScoring = applySleeperScoring({ ...sleeperDefaultScoring() }, scoringMap);
+  const counts = countStarters(starters);
   const typeName = typeof type === 'string' ? type : 'redraft';
-  let draftType: 'REDRAFT' | 'BEST_BALL' | 'DYNASTY';
+  let draftType: 'REDRAFT' | 'BEST_BALL' | 'DYNASTY' = 'REDRAFT';
   switch (typeName) {
-    case 'best_ball':
+    case 'best_ball': {
       draftType = 'BEST_BALL';
       break;
-    case 'dynasty':
+    }
+    case 'dynasty': {
       draftType = 'DYNASTY';
       break;
-    default:
+    }
+    default: {
       // keeper maps to REDRAFT (§5.4)
       draftType = 'REDRAFT';
       break;
+    }
   }
 
   return {
@@ -130,8 +91,70 @@ export function mapSleeperLeague(json: unknown): LeagueSettings | null {
   };
 }
 
-function entriesOf(value: unknown): Array<[string, unknown]> {
-  if (typeof value !== 'object' || value === null) return [];
+function applySleeperScoring(appScoring: ScoringSettings, scoringMap: Map<string, number>): ScoringSettings {
+  for (const [key, field] of Object.entries(SLEEPER_SCORING_KEYS)) {
+    const rate = scoringMap.get(key);
+    if (rate !== undefined) {
+      appScoring[field] = rate;
+    }
+  }
+  return appScoring;
+}
+
+function countStarters(starters: unknown): {
+  qb: number;
+  rb: number;
+  wr: number;
+  te: number;
+  dst: number;
+  flex: number;
+  superflex: number;
+} {
+  const counts = { qb: 0, rb: 0, wr: 0, te: 0, dst: 0, flex: 0, superflex: 0 };
+  if (Array.isArray(starters)) {
+    for (const slot of starters) {
+      if (typeof slot !== 'string') {
+        continue;
+      }
+      switch (slot) {
+        case 'QB': {
+          counts.qb += 1;
+          break;
+        }
+        case 'RB': {
+          counts.rb += 1;
+          break;
+        }
+        case 'WR': {
+          counts.wr += 1;
+          break;
+        }
+        case 'TE': {
+          counts.te += 1;
+          break;
+        }
+        case 'DEF': {
+          counts.dst += 1;
+          break;
+        }
+        case 'FLEX': {
+          counts.flex += 1;
+          break;
+        }
+        case 'SUPER_FLEX': {
+          counts.superflex += 1;
+          break;
+        }
+      }
+    }
+  }
+  return counts;
+}
+
+function entriesOf(value: unknown): [string, unknown][] {
+  if (typeof value !== 'object' || value === null) {
+    return [];
+  }
   return Object.entries(value);
 }
 

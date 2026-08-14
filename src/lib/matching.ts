@@ -5,16 +5,16 @@
 import type { AdpRecord, PlayerAdp, PlayerRecord } from './types.ts';
 import { normalizeTeam, teamByProTeamId } from './teams.ts';
 
-const SUFFIXES = /(?:^|\s)(?:jr\.?|sr\.?|ii|iii|iv|v)$/;
+const SUFFIXES = /(?:^|\s)(?:jr\.?|sr\.?|ii|iii|iv|v)$/u;
 
 /** Strip punctuation, suffixes (Jr./Sr./II/III), diacritics; case-fold (§4). */
 export function normalizeName(name: string): string {
   return name
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replaceAll(/[\u0300-\u036F]/gu, '')
     .toLowerCase()
     .replace(SUFFIXES, '')
-    .replace(/[^a-z0-9]/g, '');
+    .replaceAll(/[^a-z0-9]/gu, '');
 }
 
 /**
@@ -22,10 +22,7 @@ export function normalizeName(name: string): string {
  * (name, team) preferred; (name, position) allowed when the team differs by
  * provider convention; unresolved players get `adp = null` (§4).
  */
-export function matchAdp(
-  players: ReadonlyArray<PlayerRecord>,
-  records: ReadonlyArray<AdpRecord>,
-): Map<string, PlayerAdp> {
+export function matchAdp(players: readonly PlayerRecord[], records: readonly AdpRecord[]): Map<string, PlayerAdp> {
   const byNameTeam = new Map<string, AdpRecord[]>();
   for (const rec of records) {
     const key = `${normalizeName(rec.name)}|${normalizeTeam(rec.team) ?? ''}`;
@@ -45,7 +42,7 @@ export function matchAdp(
     // (`Broncos D/ST`-style nicknames vs workbook full names, §4).
     if (p.position === 'DST') {
       const defense = records.find(
-        (r) => (r.position === 'DST' || /d\/st$/i.test(r.name)) && (normalizeTeam(r.team) ?? '') === teamKey,
+        (r) => (r.position === 'DST' || /d\/st$/iu.test(r.name)) && (normalizeTeam(r.team) ?? '') === teamKey,
       );
       if (defense !== undefined) {
         out.set(p.id, pick(p, [defense]));
@@ -72,16 +69,22 @@ export function matchAdp(
 function pick(player: PlayerRecord, records: AdpRecord[]): PlayerAdp {
   const samePosition = records.find((r) => r.position === null || r.position === player.position);
   const rec = samePosition ?? records[0];
-  if (rec === undefined) return { adp: null, source: 'consensus' };
+  if (rec === undefined) {
+    return { adp: null, source: 'consensus' };
+  }
   return { adp: rec.adp, rank: rec.rank, source: rec.source };
 }
 
 /** Resolve a provider-side team token or ESPN `proTeamId` to an internal code. */
-export function teamOfCodeOrId(team: string | undefined, proTeamId: number | undefined): string | null {
+export function teamOfCodeOrId(team: string | undefined, proTeamId?: number): string | null {
   if (team !== undefined && team !== '') {
     const code = normalizeTeam(team);
-    if (code !== null) return code;
+    if (code !== null) {
+      return code;
+    }
   }
-  if (proTeamId !== undefined) return teamByProTeamId(proTeamId);
+  if (proTeamId !== undefined) {
+    return teamByProTeamId(proTeamId);
+  }
   return null;
 }

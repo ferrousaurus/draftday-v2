@@ -12,25 +12,86 @@
  * for Josh Allen) — master `FPS` is a separate 0-PPR formula computed from
  * rounded inputs; the oracle targets `Custom` (spec §9.2).
  */
-import { describe, expect, it } from 'vitest';
 import * as XLSX from '@e965/xlsx';
+import type { AppSettings, PlayerRecord, ScoringSettings } from '../lib/types.ts';
+import { describe, expect, it } from 'vitest';
 import { computeProjectedPoints } from '../lib/scoring.ts';
 import { parseWorkbook } from '../lib/workbook/parser.ts';
-import type { AppSettings, PlayerRecord, ScoringSettings } from '../lib/types.ts';
 
 const REAL_WORKBOOK = new URL('../../../resources/2026-FFB-Projections-0805-1.xlsx', import.meta.url);
-const FIXTURE = new URL('./fixtures/synthetic.xlsx', import.meta.url);
+const FIXTURE = new URL('fixtures/synthetic.xlsx', import.meta.url);
 
 const REL_TOLERANCE = 1e-6;
 
-function parseSettingsSheet(wb: XLSX.WorkBook): {
-  scoring: ScoringSettings;
-  teams: number;
-  roster: AppSettings['roster'];
-} {
-  const ws = wb.Sheets['Settings'];
-  if (ws === undefined) throw new Error('Settings sheet missing');
-  const rows = XLSX.utils.sheet_to_json<Array<unknown>>(ws, { header: 1, raw: true });
+function label(row: unknown[], col: number): string {
+  const cell = row[col];
+  return typeof cell === 'string' ? cell.trim() : '';
+}
+
+function value(row: unknown[], col: number): number {
+  const cell = row[col];
+  return typeof cell === 'number' ? cell : 0;
+}
+
+function applyOffenseRow(scoring: ScoringSettings, row: unknown[]): void {
+  const category = label(row, 0);
+  const pts = value(row, 1);
+  if (category === 'PASS YARDS') {
+    scoring.passYards = pts;
+  }
+  if (category === 'PASS TDS') {
+    scoring.passTd = pts;
+  }
+  if (category === 'INTERCEPTIONS') {
+    scoring.interceptions = pts;
+  }
+  if (category === 'RUSH YARDS') {
+    scoring.rushYards = pts;
+  }
+  if (category === 'RUSH TDS') {
+    scoring.rushTd = pts;
+  }
+  if (category === 'RECV YARDS') {
+    scoring.recvYards = pts;
+  }
+  if (category === 'RECV TDS') {
+    scoring.recvTd = pts;
+  }
+  if (category === 'RECEPTIONS (RB)') {
+    scoring.receptionsRb = pts;
+  }
+  if (category === 'RECEPTIONS (WR)') {
+    scoring.receptionsWr = pts;
+  }
+  if (category === 'RECEPTIONS (TE)') {
+    scoring.receptionsTe = pts;
+  }
+}
+
+function applyDefenseRow(scoring: ScoringSettings, row: unknown[]): void {
+  const category = label(row, 0);
+  const pts = value(row, 1);
+  if (category === 'DEF SACKS') {
+    scoring.defSacks = pts;
+  }
+  if (category === 'DEF INT') {
+    scoring.defInt = pts;
+  }
+  if (category === 'DEF FORCE FUMBLE') {
+    scoring.defForceFumble = pts;
+  }
+  if (category === 'DEF RECOVER FUMBLE') {
+    scoring.defRecoverFumble = pts;
+  }
+  if (category === 'DEF SAFETIES') {
+    scoring.defSafeties = pts;
+  }
+  if (category === 'DEF TOUCHDOWN') {
+    scoring.defTd = pts;
+  }
+}
+
+function parseScoringRows(rows: unknown[][]): ScoringSettings {
   const scoring: ScoringSettings = {
     passAttempts: 0,
     completions: 0,
@@ -52,6 +113,14 @@ function parseSettingsSheet(wb: XLSX.WorkBook): {
     defSafeties: 0,
     defTd: 0,
   };
+  for (const row of rows) {
+    applyOffenseRow(scoring, row);
+    applyDefenseRow(scoring, row);
+  }
+  return scoring;
+}
+
+function parseRosterRows(rows: unknown[][]): { teams: number; roster: AppSettings['roster'] } {
   const roster = {
     startingQb: 0,
     startingRb: 0,
@@ -63,44 +132,49 @@ function parseSettingsSheet(wb: XLSX.WorkBook): {
     auctionBudget: 200,
   };
   let teams = 12;
-  const label = (row: Array<unknown>, col: number): string => {
-    const cell = row[col];
-    return typeof cell === 'string' ? cell.trim() : '';
-  };
-  const value = (row: Array<unknown>, col: number): number => {
-    const cell = row[col];
-    return typeof cell === 'number' ? cell : 0;
-  };
   for (const row of rows) {
-    const category = label(row, 0);
-    const pts = value(row, 1);
-    if (category === 'PASS YARDS') scoring.passYards = pts;
-    if (category === 'PASS TDS') scoring.passTd = pts;
-    if (category === 'INTERCEPTIONS') scoring.interceptions = pts;
-    if (category === 'RUSH YARDS') scoring.rushYards = pts;
-    if (category === 'RUSH TDS') scoring.rushTd = pts;
-    if (category === 'RECV YARDS') scoring.recvYards = pts;
-    if (category === 'RECV TDS') scoring.recvTd = pts;
-    if (category === 'RECEPTIONS (RB)') scoring.receptionsRb = pts;
-    if (category === 'RECEPTIONS (WR)') scoring.receptionsWr = pts;
-    if (category === 'RECEPTIONS (TE)') scoring.receptionsTe = pts;
-    if (category === 'DEF SACKS') scoring.defSacks = pts;
-    if (category === 'DEF INT') scoring.defInt = pts;
-    if (category === 'DEF FORCE FUMBLE') scoring.defForceFumble = pts;
-    if (category === 'DEF RECOVER FUMBLE') scoring.defRecoverFumble = pts;
-    if (category === 'DEF SAFETIES') scoring.defSafeties = pts;
-    if (category === 'DEF TOUCHDOWN') scoring.defTd = pts;
     const rosterCategory = label(row, 3);
     const rosterValue = value(row, 4);
-    if (rosterCategory === 'TEAMS') teams = rosterValue;
-    if (rosterCategory === 'STARTING QB') roster.startingQb = rosterValue;
-    if (rosterCategory === 'STARTING RB') roster.startingRb = rosterValue;
-    if (rosterCategory === 'STARTING WR') roster.startingWr = rosterValue;
-    if (rosterCategory === 'STARTING TE') roster.startingTe = rosterValue;
-    if (rosterCategory === 'STARTING DST') roster.startingDst = rosterValue;
-    if (rosterCategory === 'STARTING FLEX') roster.flex = rosterValue;
-    if (rosterCategory === 'STARTING SUPERFLEX') roster.superflex = rosterValue;
+    if (rosterCategory === 'TEAMS') {
+      teams = rosterValue;
+    }
+    if (rosterCategory === 'STARTING QB') {
+      roster.startingQb = rosterValue;
+    }
+    if (rosterCategory === 'STARTING RB') {
+      roster.startingRb = rosterValue;
+    }
+    if (rosterCategory === 'STARTING WR') {
+      roster.startingWr = rosterValue;
+    }
+    if (rosterCategory === 'STARTING TE') {
+      roster.startingTe = rosterValue;
+    }
+    if (rosterCategory === 'STARTING DST') {
+      roster.startingDst = rosterValue;
+    }
+    if (rosterCategory === 'STARTING FLEX') {
+      roster.flex = rosterValue;
+    }
+    if (rosterCategory === 'STARTING SUPERFLEX') {
+      roster.superflex = rosterValue;
+    }
   }
+  return { teams, roster };
+}
+
+function parseSettingsSheet(wb: XLSX.WorkBook): {
+  scoring: ScoringSettings;
+  teams: number;
+  roster: AppSettings['roster'];
+} {
+  const ws = wb.Sheets.Settings;
+  if (ws === undefined) {
+    throw new Error('Settings sheet missing');
+  }
+  const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, raw: true });
+  const scoring = parseScoringRows(rows);
+  const { teams, roster } = parseRosterRows(rows);
   return { scoring, teams, roster };
 }
 
@@ -125,14 +199,14 @@ function runOracle(bytes: Uint8Array): { players: PlayerRecord[]; settings: AppS
   };
 }
 
-function assertOracle(bytes: Uint8Array, label: string) {
+function assertOracle(bytes: Uint8Array, scenario: string) {
   const { players, settings } = runOracle(bytes);
   expect(players.length).toBeGreaterThan(0);
-  const worst: Array<{ name: string; position: string; file: number; computed: number }> = [];
+  const worst: { name: string; position: string; file: number; computed: number }[] = [];
   for (const p of players) {
     const computed = computeProjectedPoints(p, settings.scoring);
     const file = p.filePoints;
-    let relError: number;
+    let relError = 0;
     if (file === 0) {
       relError = computed === 0 ? 0 : Infinity;
     } else {
@@ -142,7 +216,7 @@ function assertOracle(bytes: Uint8Array, label: string) {
       worst.push({ name: p.name, position: p.position, file, computed });
     }
   }
-  expect(worst, `${label}: engine must reproduce Custom within ${REL_TOLERANCE} relative error`).toEqual([]);
+  expect(worst, `${scenario}: engine must reproduce Custom within ${REL_TOLERANCE} relative error`).toEqual([]);
 }
 
 describe('scoring oracle', () => {
@@ -160,6 +234,20 @@ describe('scoring oracle', () => {
     }
   });
 });
+
+function player(position: PlayerRecord['position'], name: string, rawStats: PlayerRecord['rawStats']): PlayerRecord {
+  return {
+    id: `${position}:${name}`,
+    position,
+    name,
+    team: 'X',
+    bye: 0,
+    rawStats,
+    filePoints: 0,
+    playerId: null,
+    ref: 1,
+  };
+}
 
 describe('scoring engine units', () => {
   const settings: ScoringSettings = {
@@ -183,20 +271,6 @@ describe('scoring engine units', () => {
     defSafeties: 2,
     defTd: 6,
   };
-
-  function player(position: PlayerRecord['position'], name: string, rawStats: PlayerRecord['rawStats']): PlayerRecord {
-    return {
-      id: `${position}:${name}`,
-      position,
-      name,
-      team: 'X',
-      bye: 0,
-      rawStats,
-      filePoints: 0,
-      playerId: null,
-      ref: 1,
-    };
-  }
 
   it('prices the QB stat line', () => {
     const pts = computeProjectedPoints(

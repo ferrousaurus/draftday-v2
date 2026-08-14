@@ -18,10 +18,18 @@ export type BoardSearch = {
   steals: StealsFilter;
 };
 
-export const BOARD_SEARCH_DEFAULTS: BoardSearch = { q: '', pos: '', sort: 'adp', dir: 'asc', steals: 'all' };
+export const BOARD_SEARCH_DEFAULTS: BoardSearch = {
+  q: '',
+  pos: '',
+  sort: 'adp',
+  dir: 'asc',
+  steals: 'all',
+};
 
 export function isStealsFilter(value: unknown): value is StealsFilter {
-  if (typeof value !== 'string') return false;
+  if (typeof value !== 'string') {
+    return false;
+  }
   return STEALS_VALUES.some((s) => s === value);
 }
 

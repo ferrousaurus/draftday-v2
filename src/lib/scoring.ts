@@ -28,14 +28,22 @@ export function computeProjectedPoints(player: PlayerRecord, scoring: ScoringSet
 
 export function receptionsRate(position: Position, scoring: ScoringSettings): number {
   switch (position) {
-    case 'RB':
+    case 'RB': {
       return scoring.receptionsRb;
-    case 'WR':
+    }
+    case 'WR': {
       return scoring.receptionsWr;
-    case 'TE':
+    }
+    case 'TE': {
       return scoring.receptionsTe;
-    default:
+    }
+    case 'QB':
+    case 'DST': {
       return 0;
+    }
+    default: {
+      return 0;
+    }
   }
 }
 
@@ -56,16 +64,24 @@ export function replacementRank(
   // Odd team counts round up to the next even number before ranks are computed.
   const evenTeams = teams % 2 === 0 ? teams : teams + 1;
   switch (position) {
-    case 'QB':
+    case 'QB': {
       return evenTeams * (roster.startingQb + roster.superflex);
-    case 'RB':
+    }
+    case 'RB': {
       return evenTeams * (roster.startingRb + roster.flex / 2);
-    case 'WR':
+    }
+    case 'WR': {
       return evenTeams * (roster.startingWr + roster.flex / 2);
-    case 'TE':
+    }
+    case 'TE': {
       return evenTeams * roster.startingTe;
-    case 'DST':
+    }
+    case 'DST': {
       return evenTeams * roster.startingDst;
+    }
+    default: {
+      return 0;
+    }
   }
 }
 
@@ -75,7 +91,7 @@ export function replacementRank(
  */
 export function replacementBaseline(
   position: Position,
-  projected: ReadonlyArray<number>,
+  projected: readonly number[],
   teams: number,
   roster: {
     startingQb: number;
@@ -87,9 +103,12 @@ export function replacementBaseline(
     superflex: number;
   },
 ): number {
-  if (projected.length === 0) return 0;
+  if (projected.length === 0) {
+    return 0;
+  }
   const sorted = [...projected].sort((a, b) => b - a);
-  const rank = Math.min(Math.max(Math.round(replacementRank(position, teams, roster)), 1), sorted.length);
+  const rawRank = replacementRank(position, teams, roster);
+  const rank = Math.min(Math.max(Math.round(rawRank), 1), sorted.length);
   return sorted[rank - 1] ?? 0;
 }
 

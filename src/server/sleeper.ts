@@ -2,9 +2,10 @@
  * Sleeper league settings (§5.4) — TanStack Start server function. The league
  * endpoint is public (no auth); `leagueId` is a public identifier (§5.5).
  */
-import { createServerFn } from '@tanstack/react-start';
+import { type SleeperLeagueJson, mapSleeperLeague } from '../lib/sleeper.ts';
 import type { LeagueSettings } from '../lib/types.ts';
-import { mapSleeperLeague, type SleeperLeagueJson } from '../lib/sleeper.ts';
+import { createServerFn } from '@tanstack/react-start';
+import { entriesOf } from '../lib/object-entries.ts';
 
 export type SleeperRequest = { leagueId: string };
 
@@ -26,38 +27,48 @@ export async function fetchSleeperLeagueData(leagueId: string): Promise<SleeperR
 
 export const fetchSleeperLeague = createServerFn({ method: 'POST' })
   .validator((input: SleeperRequest) => input)
-  .handler(async ({ data }) => fetchSleeperLeagueData(data.leagueId));
+  .handler(({ data }) => fetchSleeperLeagueData(data.leagueId));
 
 /** Defensive parse of the public Sleeper league JSON (no type assertions). */
 function parseSleeperLeagueJson(json: unknown): SleeperLeagueJson {
   const out: SleeperLeagueJson = {};
-  if (typeof json !== 'object' || json === null) return out;
-  for (const [key, value] of Object.entries(json)) {
-    if (key === 'total_rosters' && typeof value === 'number') out.total_rosters = value;
-    if (key === 'type' && typeof value === 'string') out.type = value;
-    if (key === 'settings' && typeof value === 'object' && value !== null) out.settings = parseSleeperSettings(value);
+  if (typeof json !== 'object' || json === null) {
+    return out;
+  }
+  for (const [key, value] of entriesOf(json)) {
+    if (key === 'total_rosters' && typeof value === 'number') {
+      out.total_rosters = value;
+    }
+    if (key === 'type' && typeof value === 'string') {
+      out.type = value;
+    }
+    if (key === 'settings' && typeof value === 'object' && value !== null) {
+      out.settings = parseSleeperSettings(value);
+    }
   }
   return out;
 }
 
 function parseSleeperSettings(value: object): NonNullable<SleeperLeagueJson['settings']> {
   const out: NonNullable<SleeperLeagueJson['settings']> = {};
-  for (const [key, entry] of Object.entries(value)) {
+  for (const [key, entry] of entriesOf(value)) {
     if (key === 'scoring' && typeof entry === 'object' && entry !== null) {
       const scoring: Record<string, number> = {};
-      for (const [stat, rate] of Object.entries(entry)) {
-        if (typeof rate === 'number') scoring[stat] = rate;
+      for (const [stat, rate] of entriesOf(entry)) {
+        if (typeof rate === 'number') {
+          scoring[stat] = rate;
+        }
       }
       out.scoring = scoring;
     }
     if (key === 'roster' && typeof entry === 'object' && entry !== null) {
       const roster: NonNullable<SleeperLeagueJson['settings']>['roster'] = {};
-      for (const [rosterKey, value] of Object.entries(entry)) {
-        if (rosterKey === 'starters' && Array.isArray(value)) {
-          roster.starters = value.filter((s): s is string => typeof s === 'string');
+      for (const [rosterKey, rosterValue] of entriesOf(entry)) {
+        if (rosterKey === 'starters' && Array.isArray(rosterValue)) {
+          roster.starters = rosterValue.filter((s): s is string => typeof s === 'string');
         }
-        if (rosterKey === 'roster_positions' && Array.isArray(value)) {
-          roster.roster_positions = value.filter((s): s is string => typeof s === 'string');
+        if (rosterKey === 'roster_positions' && Array.isArray(rosterValue)) {
+          roster.roster_positions = rosterValue.filter((s): s is string => typeof s === 'string');
         }
       }
       out.roster = roster;

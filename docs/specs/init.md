@@ -16,7 +16,7 @@ This document is the authoritative, non-vague specification. The workbook format
 6. The app computes VORP per player (§6) and navigates to the **draft board** (`/board`) — immediately, without waiting for ADP; xADP and deltas populate once ADP arrives, with skeleton/empty placeholders while it loads (§8.1).
 7. The board is a sortable/filterable data table, default-sorted by ADP, with steals accented and reaches dimmed (§6.4, §8), plus minimal draft-day pick tracking (§8.1).
 
-Settings changes recompute Projected Points, VORP, xADP, and deltas **live, client-side** — no server round-trip for recomputation; xADP and deltas also update when ADP (re)arrives. A `scoringFormat` change (via the PPR chip, a Custom-mode RECEPTIONS stepper, or a league-aware lock) additionally refetches ADP — it alters the BeatADP URL and the provider key, §8.2. Season is passed only to the kona fetch: in league-aware ESPN a season change refetches ADP, which transitively refits the regression and changes xADP and deltas; BeatADP is seasonless, so season never affects ADP there. Projected Points and VORP never depend on season or ADP, §5.3.
+Settings changes recompute Projected Points, VORP, xADP, and deltas **live, client-side** — no server round-trip for recomputation; xADP and deltas also update when ADP (re)arrives. A `scoringFormat` change (via the PPR chip, a Custom-mode RECEPTIONS stepper, or a league-aware lock) additionally refetches ADP — it alters the BeatADP URL and the provider key, §8.2. Season is passed only to the kona fetch: in league-aware ESPN a season change refetches ADP, which transitively refits the isotonic mapping and changes xADP and deltas; BeatADP is seasonless, so season never affects ADP there. Projected Points and VORP never depend on season or ADP, §5.3.
 
 ## 2. Data Model
 
@@ -39,7 +39,7 @@ Settings changes recompute Projected Points, VORP, xADP, and deltas **live, clie
 - `projectedPoints` — recomputed from `rawStats` under the active scoring settings (§3).
 - `vorp` — `projectedPoints − replacementBaseline(position)` (§6.1); can be negative.
 - `adp` — from the ADP provider (§5); `null` when unavailable. Carries a `source` tag: `league` (kona), `platform` (BeatADP platform column), or `consensus` (BeatADP Consensus fallback).
-- `xadp` — expected ADP from the position log-linear regression (§6.2); `null` without ADP.
+- `xadp` — expected ADP from the per-position isotonic mapping (§6.2); `null` without ADP.
 - `delta` — `adp − xadp` in picks (§6.3).
 
 ## 3. Parsing & Scoring
@@ -76,7 +76,7 @@ Parsing rules:
 | Platform | ESPN credentials (`espn_s2` / `SWID`)                                                      | —                         | yes (required when league-aware ESPN) — persisted with settings (§5.5, §7); never stored server-side or in any cache                                                                                                                                                                       |
 | Platform | Draft type                                                                                 | REDRAFT                   | yes — options depend on platform: ESPN=`REDRAFT` only (the select is inert — ESPN never exposes best-ball or dynasty); Yahoo=`REDRAFT`, `BEST_BALL`; Sleeper=`REDRAFT`, `BEST_BALL`, `DYNASTY`. **Locked to the league's type when league-aware** (keeper leagues map to `REDRAFT`, §5.4). |
 | Core     | PPR                                                                                        | 0.5 (RB/WR/TE)            | yes (0 / 0.5 / 1 / Custom) — a segmented control over the three RECEPTIONS fields; `Custom` reveals a per-position RECEPTIONS stepper for RB/WR/TE (§3.2 note)                                                                                                                             |
-| Core     | League size (teams)                                                                        | 12                        | yes (drives §6.1 baselines and §6.3 round rule)                                                                                                                                                                                                                                            |
+| Core     | League size (teams)                                                                        | 12                        | yes (drives §6.1 baselines)                                                                                                                                                                                                                                                                |
 | Core     | Pass TD                                                                                    | 4                         | yes (segmented 4 / 6)                                                                                                                                                                                                                                                                      |
 | Scoring  | PASS ATTEMPTS / COMPLETIONS / TARGETS                                                      | 0                         | yes (advanced, collapsible)                                                                                                                                                                                                                                                                |
 | Scoring  | PASS YARDS                                                                                 | 0.04                      | yes (segmented 0.04 / 0.05 / 0.1)                                                                                                                                                                                                                                                          |
@@ -169,7 +169,7 @@ When league-aware is enabled, the league API is the settings authority:
 - **Credentials:** `espn_s2`/`SWID` are entered in the setup UI and **persisted with settings in IndexedDB** (§7) — never stored server-side, never logged, never written to any cache (Deno KV or in-memory, §5.3) — and passed as arguments to the kona server function per request (transmitted, never retained). The kona _response_ is never cached server-side (§5.3); it is cached client-side in the IndexedDB `adpCache` like every other provider's response (§7).
 - `leagueId` (ESPN or Sleeper) is a public identifier and is persisted with settings.
 
-## 6. VORP, xADP, Deltas, and the Round Rule
+## 6. VORP, xADP, Deltas, and Steal/Reach Flags
 
 ### 6.1 VORP
 
@@ -185,26 +185,21 @@ When league-aware is enabled, the league API is the settings authority:
 
 Odd team counts round up to the next even number before ranks are computed (11 teams → 12, 9 teams → 10); ranks then clamp to `[1, position count]`. Baselines recompute live with settings (league size or roster changes propagate to VORP and xADP). Defaults (12 teams, 1/2/3/1 + 1 flex): QB12, RB30, WR42, TE12, DST12. VORP may be negative for below-replacement players. The workbook's own VORP column is **not** used (projections-only rule; its formulas are idiosyncratic).
 
-### 6.2 Regression input & fit
+### 6.2 Isotonic xADP mapping
 
-Per position, the fit uses matched players **with ADP and positive VORP** (`vorp > 0`); players without ADP are excluded from the fit and displayed with blank ADP/xADP/delta.
+Per position, xADP comes from an **isotonic (monotone) regression** of ADP on VORP over every ADP-bearing player of that position — **any VORP sign**: bench players get drafted too, so they get real xADPs anchored to late-pick pricing. The fitted curve is constrained non-increasing in VORP (higher VORP ⇒ earlier pick); players whose draft order violates projection order pool into blocks at the weighted mean ADP of the block (PAVA), and equal-VORP players always share one xADP. `xadp = fitted(vorp)` — no parametric curve, no window, no clamping. Players without ADP have no anchor and get `xadp = null` (blank, like their ADP/delta).
 
-**Why positive-VORP only (probe-validated 2026-08-11):** BeatADP consensus ADP × Athletic 0805 half-PPR projections (n=328) compared linear, log-linear, quadratic, cubic, exponential, and power fits. On the **full domain** the log form is the _worst_ of the smooth curves — quadratic/cubic fit best (R² ≈ 0.80 on VORP) and log-linear ranks last (R² ≈ 0.75), because 74% of the player pool projects below replacement and a log curve crosses zero far too early (ADP ≈ 50 vs ≈ 75 actual). Restricted to **positive-VORP players** (the top ~80–130, roughly ADP 1–100 — the region where draft value lives), **log-linear is the best fit** in the prediction direction `ln(adp) ~ vorp`: pooled R² = 0.864 (vs 0.60 linear, 0.78 quadratic), per-position QB 0.898 / RB 0.927 / WR 0.903 / TE 0.755. Below-replacement players add no signal — the clamp below maps them to the board tail anyway.
+**Why rank-based (supersedes the 2026-08-11/08-12 parametric fits):** windowed OLS / power-law fits develop systematic bias at draft edges — round-1 windows truncate at ADP 1 and curve curvature pushes fitted xADPs below actual ADPs (the market looks overpriced everywhere at the top), while interior windows anchor on the player's own point, shrinking deltas toward zero mid-draft. A monotone mapping removes the curvature artifact: when the market prices a position consistently, `xADP ≈ ADP` and deltas ≈ 0; nonzero deltas appear only where draft order violates projection order.
 
-Per-position **log-linear** regression: `ln(adp) = a + b·vorp` via ordinary least squares, per position (QB/RB/WR/TE/DST independently); note `b < 0`. Then
+**Minimum sample:** at least **5 players with ADP** per position; below that, the position emits the footer note ("{position} xADP unavailable: fewer than 5 players with ADP") and skips xADP for every player in it. **DST in BeatADP modes:** DST has no ADP samples at all (§5.2 — BeatADP carries no team defenses), so no mapping can run; DST rows render per §6.4 — blank ADP/xADP/delta, sorted to the bottom, with the position-level DST footnote. In league-aware ESPN, DST has ADP and the mapping runs normally.
 
-`xadp = clamp(e^(a + b·vorp), 1, maxADP)`
-
-(`maxADP` = the largest ADP observed for that position; below-replacement players clamp to `maxADP`, i.e. the end of the board). Delta remains in absolute picks because the output is transformed back.
-
-**Minimum sample:** a position fit requires **at least 5 players with positive VORP and ADP**; below that, `xADP = null` for the entire position with a board footer note ("{position} xADP unavailable: fewer than 5 positive-VORP players with ADP"). Degenerate fits (zero variance in VORP or ln(ADP)) also yield null + note, never a garbage line. **DST in BeatADP modes:** DST has no ADP samples at all (§5.2 — BeatADP carries no team defenses), so no fit can run; DST rows render per §6.4 — blank ADP/xADP/delta, sorted to the bottom, with the position-level DST footnote. In league-aware ESPN, DST has ADP and the fit runs normally.
-
-### 6.3 Deltas & round rule
+### 6.3 Deltas & steal/reach flags
 
 - `delta = adp − xadp` (picks; positive = market drafts the player later than his projections imply).
-- **Steal**: `delta ≥ teams` (at least one full round later than expected) → accented.
-- **Reach**: `delta ≤ −teams` → dimmed.
-- Everything else renders normally. Accenting is binary; no gradient in v1.
+- Above-replacement players (`vorp > 0`) of **all positions** are bucketed by ADP round (a round is `TEAMS` picks, `bucket = floor((adp − 1) / TEAMS)`). Within each bucket, up to **3 steals** and up to **3 reaches** flag: the strongest candidates at or past the **strong floor** — a quarter-round, `strongFloor = max(2, ⌈TEAMS/4⌉)` picks (3 at 12 teams) — rank first; if a side comes up short, the next-best candidates at or past the **fill floor** — `fillFloor = max(1, ⌊TEAMS/8⌋)` picks (1 at 12 teams) — top up the remaining slots, so every round surfaces suggestions without flagging sub-1-pick noise. Ties break by delta, then ADP, then name, so the output is deterministic. A side never fills from the opposite sign: a round the market overpays wholesale shows reaches only, never fabricated steals.
+- **Steal** → accented. **Reach** → dimmed. Accenting is binary; no gradient in v1.
+- Flags are **per-round-relative, spanning positions**: deltas are already position-relative (the per-position isotonic xADP mapping absorbs systematic market-vs-projection gaps — one league's ADP can overpay entire early rounds against the projections file, §6.2), and ranking those deltas within each round keeps advice relative to the player's draft neighborhood. A round never floods with flags (the 3-per-side cap), and buckets whose deltas are all sub-noise flag nothing.
+- Flags are **value signals**: they apply only to above-replacement players (`vorp > 0`) — below-replacement ADP is idiosyncratic tail noise (handcuffs, dart throws). Bench players keep their xADP/delta columns but never flag. Players without xADP (no ADP anchor, or under-sampled position) flag nothing.
 
 ### 6.4 Display
 
@@ -292,12 +287,12 @@ Validation, injection, and secret hygiene are handled by **Varlock** (varlock.de
 
 1. Drag-and-drop `.xlsx` upload parses the workbook (7 sheets, §3.1) and persists the raw file to IndexedDB.
 2. Platform selection and league-aware flow work: ESPN/Yahoo/Sleeper selectable; league-aware available for ESPN and Sleeper; ESPN league-aware requires `leagueId` + `espn_s2` + `SWID`, Sleeper requires `leagueId`; Yahoo has no league-aware; draftType options match the platform; league-aware locks settings per §5.4.
-3. League settings recompute live, client-side, without a server round-trip: league size and scoring-table changes recompute Projected Points, VORP, xADP, and deltas directly; a `scoringFormat` change (PPR chip, Custom-mode RECEPTIONS stepper, or league-aware lock) recomputes Projected Points and VORP and additionally refetches ADP (§8.2 — xADP and deltas update when the refetched ADP arrives). A season change in league-aware ESPN refetches kona ADP, which refits the regression and updates xADP and deltas; Projected Points and VORP never depend on season or ADP (§5.3 — BeatADP is seasonless).
+3. League settings recompute live, client-side, without a server round-trip: league size and scoring-table changes recompute Projected Points, VORP, xADP, and deltas directly; a `scoringFormat` change (PPR chip, Custom-mode RECEPTIONS stepper, or league-aware lock) recomputes Projected Points and VORP and additionally refetches ADP (§8.2 — xADP and deltas update when the refetched ADP arrives). A season change in league-aware ESPN refetches kona ADP, which refits the isotonic mapping and updates xADP and deltas; Projected Points and VORP never depend on season or ADP (§5.3 — BeatADP is seasonless).
 4. With the workbook's own settings (read by the test), recomputed Projected Points reproduce the workbook's `Custom` values (oracle test) for all positions; the oracle skips cleanly without the real workbook.
 5. ADP is fetched through server functions: kona for league-aware ESPN (cookie-authenticated; **never cached server-side** — cached client-side in the IndexedDB `adpCache`, §7) and BeatADP for every other mode (server-side scraped, **Deno KV-cached** with midnight-UTC expiry via the `expireIn` option in milliseconds; in dev the same code path runs against Deno's in-memory KV backing); failures surface with a retry and the board stays usable.
 6. Consensus fallback works: a player missing platform ADP shows Consensus ADP tagged with the indicator; a player missing both shows blanks.
 7. The board shows ADP, Name, Position, Team, Projected Points, VORP, xADP, and Delta; default-sorted by ADP with nulls last; ADP-source label present; DST rows blank-with-footnote in BeatADP modes.
-8. Steals (`delta ≥ teams`) are accented and reaches (`delta ≤ −teams`) are dimmed; xADP comes from the VORP log-linear regression (§6.2) with the ≥5 positive-VORP sample rule.
+8. Steals are accented and reaches dimmed, where per 12-pick round bucket spanning all positions the top-3 steals (delta ≥ 3 picks, topped up from delta ≥ 1) and bottom-3 reaches (delta ≤ −3, topped up from delta ≤ −1) among above-replacement players flag — round 1 included; deltas come from the per-position isotonic xADP mapping over all ADP-bearing players, any VORP sign (§6.2), with the ≥5-sample rule.
 9. Filter/search/sort state (`q`, `pos`, `sort`, `dir`, `steals`) is managed with search params; board deep-links restore that state.
 10. Draft tracking works: mark/undo drafted, counters update, state survives reload from IndexedDB.
 11. Reloading restores the session from IndexedDB without re-uploading; "Start over" clears it; ESPN league-aware credentials persist with settings (surviving tab close and reload), so reopening restores league-aware mode — degradation to BeatADP with a banner occurs only when credentials are absent or rejected.

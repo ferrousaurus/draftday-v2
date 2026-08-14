@@ -2,17 +2,17 @@
  * Settings-model tests (§3.2): PPR chip derivation, qbType/scoringFormat
  * derivation, per-platform draft types, and validation bounds.
  */
-import { describe, expect, it } from 'vitest';
 import {
+  DEFAULT_SETTINGS,
+  DRAFT_TYPES_BY_PLATFORM,
   deriveQbType,
   deriveScoringFormat,
-  DRAFT_TYPES_BY_PLATFORM,
   pprPreset,
   receptionsFromPpr,
   settingsSchema,
 } from '../lib/settings.ts';
 import { adpModeFor, draftTypeOptions, platformHasLeagueAware } from '../lib/adp.ts';
-import { DEFAULT_SETTINGS } from '../lib/settings.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('PPR chip rule (§3.2)', () => {
   it('derives the preset from the canonical RECEPTIONS triple', () => {

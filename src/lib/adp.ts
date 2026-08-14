@@ -2,8 +2,8 @@
  * ADP routing (§5.1, §8.2): derive the active provider mode from settings and
  * compute the client-side adpCache key. Pure, unit-tested.
  */
-import type { AdpMode, AppSettings, DraftType, QbType, ScoringFormat } from './types.ts';
-import { deriveQbType, deriveScoringFormat, DRAFT_TYPES_BY_PLATFORM } from './settings.ts';
+import type { AdpMode, AppSettings, DraftType, ScoringFormat } from './types.ts';
+import { DRAFT_TYPES_BY_PLATFORM, deriveQbType, deriveScoringFormat } from './settings.ts';
 
 /** The active ADP mode: kona for league-aware ESPN, BeatADP for everything else (§5.1). */
 export function adpModeFor(settings: AppSettings): AdpMode {
@@ -34,20 +34,10 @@ export function adpCacheKey(mode: AdpMode): string {
 
 /** A human label for the board header ("ADP: ESPN league · fetched 14:32"). */
 export function adpModeLabel(mode: AdpMode): string {
-  if (mode.kind === 'kona') return 'ESPN league';
-  let platform: string;
-  switch (mode.platform) {
-    case 'Yahoo':
-      platform = 'Yahoo';
-      break;
-    case 'Sleeper':
-      platform = 'Sleeper';
-      break;
-    default:
-      platform = 'ESPN';
-      break;
+  if (mode.kind === 'kona') {
+    return 'ESPN league';
   }
-  return `BeatADP ${platform}`;
+  return `BeatADP ${mode.platform}`;
 }
 
 export function platformHasLeagueAware(platform: AppSettings['platform']): boolean {
@@ -60,13 +50,19 @@ export function draftTypeOptions(platform: AppSettings['platform']): readonly Dr
 
 export function scoringFormatLabel(format: ScoringFormat): string {
   switch (format) {
-    case 'STANDARD':
+    case 'STANDARD': {
       return 'Standard';
-    case 'HALF_PPR':
+    }
+    case 'HALF_PPR': {
       return '0.5 PPR';
-    case 'PPR':
+    }
+    case 'PPR': {
       return '1 PPR';
+    }
+    default: {
+      return format;
+    }
   }
 }
 
-export type { QbType };
+export type { QbType } from './types.ts';

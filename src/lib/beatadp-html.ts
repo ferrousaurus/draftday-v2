@@ -29,49 +29,55 @@ type ValueKey = (typeof VALUE_KEYS)[number];
 
 function decodeEntities(text: string): string {
   return text
-    .replace(/&#x27;/gi, "'")
-    .replace(/&apos;/gi, "'")
-    .replace(/&amp;/gi, '&')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&#39;/gi, "'");
+    .replaceAll(/&#x27;/giu, "'")
+    .replaceAll(/&apos;/giu, "'")
+    .replaceAll(/&amp;/giu, '&')
+    .replaceAll(/&nbsp;/giu, ' ')
+    .replaceAll(/&#39;/giu, "'");
 }
 
 function parseValue(text: string): number | null {
   const t = text.trim();
-  if (t === '' || t === DASH) return null;
-  const n = Number.parseFloat(t);
+  if (t === '' || t === DASH) {
+    return null;
+  }
+  const n = Number(t);
   return Number.isNaN(n) ? null : n;
 }
 
-function findRows(html: string): Array<{ cells: string[] }> {
-  const rows: Array<{ cells: string[] }> = [];
+function findRows(html: string): { cells: string[] }[] {
+  const rows: { cells: string[] }[] = [];
   // Row starts with `<tr …>` followed by `<td`s; each data row carries exactly
   // the 8 table cells in order.
-  const trRe = /<tr\b[^>]*>([\s\S]*?)<\/tr\s*>/gi;
-  let trMatch: RegExpExecArray | null;
+  const trRe = /<tr\b[^>]*>(?<trBody>[\s\S]*?)<\/tr\s*>/giu;
+  let trMatch: RegExpExecArray | null = null;
   while ((trMatch = trRe.exec(html)) !== null) {
-    const body = trMatch[1] ?? '';
-    if (!body.includes('<td')) continue;
-    const cells: string[] = [];
-    const tdRe = /<td\b[^>]*>([\s\S]*?)<\/td\s*>/gi;
-    let tdMatch: RegExpExecArray | null;
-    while ((tdMatch = tdRe.exec(body)) !== null) {
-      cells.push(tdMatch[1] ?? '');
+    const body = trMatch.groups?.trBody ?? '';
+    if (!body.includes('<td')) {
+      continue;
     }
-    if (cells.length >= 8) rows.push({ cells });
+    const cells: string[] = [];
+    const tdRe = /<td\b[^>]*>(?<tdBody>[\s\S]*?)<\/td\s*>/giu;
+    let tdMatch: RegExpExecArray | null = null;
+    while ((tdMatch = tdRe.exec(body)) !== null) {
+      cells.push(tdMatch.groups?.tdBody ?? '');
+    }
+    if (cells.length >= 8) {
+      rows.push({ cells });
+    }
   }
   return rows;
 }
 
 function stripTags(html: string): string {
-  return html.replace(/<[^>]*>/g, '');
+  return html.replaceAll(/<[^>]*>/gu, '');
 }
 
 function parsePlayerCell(cell: string): { name: string; team: string | null } {
-  const anchor = cell.match(/<a\b[^>]*>([\s\S]*?)<\/a\s*>/i);
-  const name = anchor !== null ? stripTags(anchor[1] ?? '') : stripTags(cell).trim();
-  const teamSpan = cell.match(/<span\b[^>]*>([\s\S]*?)<\/span\s*>/i);
-  const rawTeam = teamSpan === null ? null : stripTags(teamSpan[1] ?? '').trim();
+  const anchor = /<a\b[^>]*>(?<name>[\s\S]*?)<\/a\s*>/iu.exec(cell);
+  const name = anchor === null ? stripTags(cell).trim() : stripTags(anchor.groups?.name ?? '');
+  const teamSpan = /<span\b[^>]*>(?<name>[\s\S]*?)<\/span\s*>/iu.exec(cell);
+  const rawTeam = teamSpan === null ? null : stripTags(teamSpan.groups?.name ?? '').trim();
   const team = rawTeam === null || rawTeam === '' ? null : normalizeTeam(rawTeam);
   return { name: decodeEntities(name).trim(), team };
 }
@@ -82,11 +88,15 @@ function parsePlayerCell(cell: string): { name: string; team: string | null } {
  */
 export function parseBeatAdpHtml(html: string): ParsedBeatAdpTable | null {
   const rawRows = findRows(html);
-  if (rawRows.length === 0) return null;
+  if (rawRows.length === 0) {
+    return null;
+  }
   const rows: ParsedBeatAdpRow[] = [];
   for (const { cells } of rawRows) {
     const player = parsePlayerCell(cells[1] ?? '');
-    if (player.name === '') continue;
+    if (player.name === '') {
+      continue;
+    }
     const row: ParsedBeatAdpRow = {
       name: player.name,
       team: player.team,
@@ -112,19 +122,24 @@ export function platformValue(
   row: ParsedBeatAdpRow,
   platform: 'ESPN' | 'Yahoo' | 'Sleeper',
 ): { adp: number | null; source: 'platform' | 'consensus' } {
-  let value: number | null;
+  let value: number | null = null;
   switch (platform) {
-    case 'Yahoo':
-      value = row.yahoo;
-      break;
-    case 'Sleeper':
-      value = row.sleeper;
-      break;
-    default:
+    case 'ESPN': {
       value = row.espn;
       break;
+    }
+    case 'Yahoo': {
+      value = row.yahoo;
+      break;
+    }
+    case 'Sleeper': {
+      value = row.sleeper;
+      break;
+    }
   }
-  if (value !== null) return { adp: value, source: 'platform' };
+  if (value !== null) {
+    return { adp: value, source: 'platform' };
+  }
   return { adp: row.consensus, source: 'consensus' };
 }
 

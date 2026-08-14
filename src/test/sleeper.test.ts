@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { mapSleeperLeague } from '../lib/sleeper.ts';
 
-const FIXTURE = new URL('./fixtures/sleeper-league.json', import.meta.url);
+const FIXTURE = new URL('fixtures/sleeper-league.json', import.meta.url);
 
 async function readFixture(): Promise<unknown> {
   const text = await Deno.readTextFile(FIXTURE);

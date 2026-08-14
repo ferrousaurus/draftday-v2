@@ -41,12 +41,14 @@ describe('beatadp Deno KV cache', () => {
     await putCachedBeatAdp(emptyParams, { data: null, fetchedAt: 2_000_000 });
     const after = await getCachedBeatAdp(emptyParams);
     expect(after).not.toBeNull();
-    if (after !== null) expect(after.data).toBeNull();
+    if (after !== null) {
+      expect(after.data).toBeNull();
+    }
   });
 
   it('sets expireIn to the milliseconds until next UTC midnight', () => {
     const ttl = msUntilNextUtcMidnight();
     expect(ttl).toBeGreaterThan(0);
-    expect(ttl).toBeLessThanOrEqual(24 * 3600_000);
+    expect(ttl).toBeLessThanOrEqual(24 * 3_600_000);
   });
 });

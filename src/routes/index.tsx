@@ -1,14 +1,41 @@
 import { Alert, Button, Container, Group, Paper, Stack, Text, Title } from '@mantine/core';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { Link, createFileRoute } from '@tanstack/react-router';
+import { clearFile, saveFile, savePlayers } from '../lib/storage.ts';
 import { useMemo, useState } from 'react';
+import { usePlayersStore, useSettingsStore } from '../lib/store.ts';
 import { DropzoneCard } from '../components/DropzoneCard.tsx';
 import { PlatformSection } from '../components/PlatformSection.tsx';
 import { SettingsPanel } from '../components/SettingsPanel.tsx';
-import { parseWorkbook } from '../lib/workbook/parser.ts';
-import { clearFile, saveFile, savePlayers } from '../lib/storage.ts';
-import { usePlayersStore, useSettingsStore } from '../lib/store.ts';
 import { fetchKonaLeague } from '../server/kona.ts';
 import { fetchSleeperLeague } from '../server/sleeper.ts';
+import { parseWorkbook } from '../lib/workbook/parser.ts';
+
+function renderWorkbookHeader(fileSummary: string, onReplaceWorkbook: () => void) {
+  return (
+    <Paper withBorder p="sm">
+      <Group justify="space-between">
+        <Text size="sm">
+          Workbook loaded — {fileSummary}. Settings are app-owned defaults or your saved session; the workbook never
+          pre-fills them (§1, §3.2).
+        </Text>
+        {renderWorkbookActions(onReplaceWorkbook)}
+      </Group>
+    </Paper>
+  );
+}
+
+function renderWorkbookActions(onReplaceWorkbook: () => void) {
+  return (
+    <Group>
+      <Button size="xs" variant="outline" onClick={onReplaceWorkbook}>
+        Replace workbook
+      </Button>
+      <Button size="xs" component={Link} to="/board">
+        Open draft board
+      </Button>
+    </Group>
+  );
+}
 
 export const Route = createFileRoute('/')({
   component: SetupPage,
@@ -41,8 +68,8 @@ function SetupPage() {
       }
       await Promise.all([saveFile(bytes), savePlayers(parsed)]);
       setPlayers(parsed);
-    } catch (err) {
-      setParseError(err instanceof Error ? err.message : 'Could not parse the workbook.');
+    } catch (error) {
+      setParseError(error instanceof Error ? error.message : 'Could not parse the workbook.');
     } finally {
       setParsing(false);
     }
@@ -88,10 +115,10 @@ function SetupPage() {
         });
       }
       setLeagueLocked(true);
-    } catch (err) {
+    } catch (error) {
       // League fetch failure: banner + form stays unlocked, never blocked (§5.4).
       setLeagueLocked(false);
-      setConnectError(err instanceof Error ? err.message : 'Could not reach the league API.');
+      setConnectError(error instanceof Error ? error.message : 'Could not reach the league API.');
     } finally {
       setConnecting(false);
     }
@@ -111,37 +138,24 @@ function SetupPage() {
           <Stack gap="sm">
             <DropzoneCard onFile={(f) => void onFile(f)} disabled={parsing} />
             {parsing ? <Text size="sm">Parsing workbook…</Text> : null}
-            {parseError !== null ? (
+            {parseError === null ? null : (
               <Alert color="red" title="Could not load workbook">
                 {parseError}
               </Alert>
-            ) : null}
+            )}
           </Stack>
         ) : (
           <Stack gap="md">
-            <Paper withBorder p="sm">
-              <Group justify="space-between">
-                <Text size="sm">
-                  Workbook loaded — {fileSummary}. Settings are app-owned defaults or your saved session; the workbook
-                  never pre-fills them (§1, §3.2).
-                </Text>
-                <Group>
-                  <Button size="xs" variant="outline" onClick={() => void replaceWorkbook()}>
-                    Replace workbook
-                  </Button>
-                  <Button size="xs" component={Link} to="/board">
-                    Open draft board
-                  </Button>
-                </Group>
-              </Group>
-            </Paper>
+            {renderWorkbookHeader(fileSummary ?? '', () => void replaceWorkbook())}
 
             <PlatformSection
               settings={settings}
               onChange={(next) => {
                 setSettings(next);
                 // Un-toggling league-aware unlocks everything (§5.4).
-                if (!next.leagueAware) setLeagueLocked(false);
+                if (!next.leagueAware) {
+                  setLeagueLocked(false);
+                }
               }}
               locked={leagueLocked}
               connecting={connecting}

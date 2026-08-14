@@ -25,7 +25,9 @@ export function NumberStepper({ label, value, min, max, step = 1, disabled = fal
         disabled={disabled}
         clampBehavior="blur"
         onChange={(v) => {
-          if (typeof v === 'number' && Number.isFinite(v)) onChange(v);
+          if (typeof v === 'number' && Number.isFinite(v)) {
+            onChange(v);
+          }
         }}
       />
     </Stack>

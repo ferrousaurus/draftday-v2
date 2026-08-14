@@ -12,8 +12,10 @@ export function DropzoneCard({ onFile, disabled = false }: DropzoneCardProps) {
     <Paper withBorder p="md">
       <Dropzone
         onDrop={(files) => {
-          const file = files[0];
-          if (file !== undefined) onFile(file);
+          const [file] = files;
+          if (file !== undefined) {
+            onFile(file);
+          }
         }}
         accept={['.xlsx']}
         maxSize={20 * 1024 * 1024}

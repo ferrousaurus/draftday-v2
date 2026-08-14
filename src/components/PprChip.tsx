@@ -1,5 +1,5 @@
+import { PPR_PRESETS, pprPreset, receptionsFromPpr } from '../lib/settings.ts';
 import { SegmentedControl, Stack } from '@mantine/core';
-import { pprPreset, PPR_PRESETS, receptionsFromPpr } from '../lib/settings.ts';
 import { NumberStepper } from './NumberStepper.tsx';
 
 type PprChipProps = {
@@ -31,7 +31,9 @@ export function PprChip({ receptions, onChange, disabled = false }: PprChipProps
           onChange={(v) => {
             if (v !== 'custom') {
               const p = PPR_PRESETS.find((x) => String(x) === v);
-              if (p !== undefined) onChange(receptionsFromPpr(p));
+              if (p !== undefined) {
+                onChange(receptionsFromPpr(p));
+              }
             }
           }}
           disabled={disabled}

@@ -6,11 +6,11 @@
  */
 import { describe, expect, it } from 'vitest';
 import { konaVariant, mapKonaPlayers, mapKonaSettings } from '../lib/kona.ts';
-import { getTestEnv } from './test-env.ts';
 import { fetchKonaLeagueData } from '../server/kona.ts';
+import { getTestEnv } from './test-env.ts';
 
-const SETTINGS_FIXTURE = new URL('./fixtures/kona-settings.json', import.meta.url);
-const PLAYERS_FIXTURE = new URL('./fixtures/kona-players.json', import.meta.url);
+const SETTINGS_FIXTURE = new URL('fixtures/kona-settings.json', import.meta.url);
+const PLAYERS_FIXTURE = new URL('fixtures/kona-players.json', import.meta.url);
 
 async function readJson(url: URL): Promise<unknown> {
   const text = await Deno.readTextFile(url);
@@ -20,9 +20,13 @@ async function readJson(url: URL): Promise<unknown> {
 
 /** The mSettings view wraps the settings under a `settings` key (§5.3). */
 function unwrapSettings(json: unknown): unknown {
-  if (typeof json !== 'object' || json === null) return json;
+  if (typeof json !== 'object' || json === null) {
+    return json;
+  }
   for (const [key, value] of Object.entries(json)) {
-    if (key === 'settings') return value;
+    if (key === 'settings') {
+      return value;
+    }
   }
   return json;
 }
@@ -84,28 +88,36 @@ describe('konaVariant (§5.3)', () => {
       rosterSettings: { lineupSlotCounts: { 0: 2, 23: 1, 16: 1 } },
     });
     expect(twoQb).not.toBeNull();
-    if (twoQb !== null) expect(konaVariant(twoQb)).toBe('SUPERFLEX');
+    if (twoQb !== null) {
+      expect(konaVariant(twoQb)).toBe('SUPERFLEX');
+    }
   });
 
-  it('selects PPR for non-zero league PPR (fractional included) and STANDARD for zero', async () => {
+  it('selects PPR for non-zero league PPR (fractional included) and STANDARD for zero', () => {
     const ppr = mapKonaSettings({
       size: 12,
       scoringSettings: { scoringItems: [{ statId: 17, points: 1 }] },
       rosterSettings: { lineupSlotCounts: { 0: 1, 23: 1, 16: 1 } },
     });
-    if (ppr !== null) expect(konaVariant(ppr)).toBe('PPR');
+    if (ppr !== null) {
+      expect(konaVariant(ppr)).toBe('PPR');
+    }
     const standard = mapKonaSettings({
       size: 12,
       scoringSettings: { scoringItems: [{ statId: 17, points: 0 }] },
       rosterSettings: { lineupSlotCounts: { 0: 1, 23: 1, 16: 1 } },
     });
-    if (standard !== null) expect(konaVariant(standard)).toBe('STANDARD');
+    if (standard !== null) {
+      expect(konaVariant(standard)).toBe('STANDARD');
+    }
     const fractional = mapKonaSettings({
       size: 12,
       scoringSettings: { scoringItems: [{ statId: 17, points: 0.75 }] },
       rosterSettings: { lineupSlotCounts: { 0: 1, 23: 1, 16: 1 } },
     });
-    if (fractional !== null) expect(konaVariant(fractional)).toBe('PPR');
+    if (fractional !== null) {
+      expect(konaVariant(fractional)).toBe('PPR');
+    }
   });
 });
 

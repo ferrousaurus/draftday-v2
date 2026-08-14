@@ -3,8 +3,8 @@
  * semantics matching BoardTable (§6.4), and the drafted flag.
  */
 import { describe, expect, it } from 'vitest';
-import { boardToCsv } from '../lib/board-export.ts';
 import type { BoardPlayer } from '../lib/types.ts';
+import { boardToCsv } from '../lib/board-export.ts';
 
 function row(name: string, opts: Partial<BoardPlayer> = {}): BoardPlayer {
   return {
@@ -33,7 +33,7 @@ function row(name: string, opts: Partial<BoardPlayer> = {}): BoardPlayer {
 
 function playerNames(csv: string): string[] {
   return csv
-    .replace(/^\uFEFF/, '')
+    .replace(/^\uFEFF/u, '')
     .split('\r\n')
     .slice(1)
     .map((line) => line.split(',')[1] ?? '');

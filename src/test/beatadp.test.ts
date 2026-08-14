@@ -3,15 +3,17 @@
  * Pins: row/cell extraction, entity decoding, `—` → null, consensus fallback,
  * and the empty-page (unsupported combination) → null rule.
  */
+import { type ParsedBeatAdpRow, parseBeatAdpHtml, platformValue, toAdpRecords } from '../lib/beatadp-html.ts';
 import { describe, expect, it } from 'vitest';
-import { parseBeatAdpHtml, platformValue, toAdpRecords, type ParsedBeatAdpRow } from '../lib/beatadp-html.ts';
 
-const FIXTURE = new URL('./fixtures/beatadp-sample.html', import.meta.url);
+const FIXTURE = new URL('fixtures/beatadp-sample.html', import.meta.url);
 
 async function parseFixture() {
   const html = await Deno.readTextFile(FIXTURE);
   const table = parseBeatAdpHtml(html);
-  if (table === null) throw new Error('fixture parsed to null');
+  if (table === null) {
+    throw new Error('fixture parsed to null');
+  }
   return table;
 }
 
@@ -19,7 +21,7 @@ describe('parseBeatAdpHtml', () => {
   it('parses the header + first rows of the real page', async () => {
     const table = await parseFixture();
     expect(table.rows.length).toBeGreaterThanOrEqual(48);
-    const first = table.rows[0];
+    const [first] = table.rows;
     expect(first?.name).toBe('Jahmyr Gibbs');
     expect(first?.team).toBe('DET');
     expect(first?.consensus).toBeCloseTo(1.9, 1);

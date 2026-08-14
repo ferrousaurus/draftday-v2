@@ -11,28 +11,31 @@
  * BeatADP daily cache is persisted server-side (§5.2/§5.3).
  */
 export type KvStore = {
-  get(key: Deno.KvKey): Promise<{ value: unknown }>;
-  set(key: Deno.KvKey, value: unknown, options?: { expireIn?: number }): Promise<void>;
+  get: (key: Deno.KvKey) => Promise<{ value: unknown }>;
+  set: (key: Deno.KvKey, value: unknown, options?: { expireIn?: number }) => Promise<void>;
 };
 
 class InMemoryKv implements KvStore {
   private readonly entries = new Map<string, { value: unknown; expiresAt: number | null }>();
 
-  async get(key: Deno.KvKey): Promise<{ value: unknown }> {
+  get(key: Deno.KvKey): Promise<{ value: unknown }> {
     const entry = this.entries.get(JSON.stringify(key));
-    if (entry === undefined) return { value: null };
+    if (entry === undefined) {
+      return Promise.resolve({ value: null });
+    }
     if (entry.expiresAt !== null && entry.expiresAt <= Date.now()) {
       this.entries.delete(JSON.stringify(key));
-      return { value: null };
+      return Promise.resolve({ value: null });
     }
-    return { value: entry.value };
+    return Promise.resolve({ value: entry.value });
   }
 
-  async set(key: Deno.KvKey, value: unknown, options?: { expireIn?: number }): Promise<void> {
+  set(key: Deno.KvKey, value: unknown, options?: { expireIn?: number }): Promise<void> {
     this.entries.set(JSON.stringify(key), {
       value,
       expiresAt: options?.expireIn === undefined ? null : Date.now() + options.expireIn,
     });
+    return Promise.resolve();
   }
 }
 
@@ -46,7 +49,7 @@ function adaptRealKv(kv: Deno.Kv): KvStore {
   };
 }
 
-let kvPromise: Promise<KvStore> | undefined;
+let kvPromise: Promise<KvStore> | null = null;
 
 export function openKv(): Promise<KvStore> {
   kvPromise ??= typeof Deno.openKv === 'function' ? Deno.openKv().then(adaptRealKv) : Promise.resolve(new InMemoryKv());

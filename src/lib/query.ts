@@ -4,11 +4,11 @@
  * provider key changes (settings changes) or via "Refresh ADP" (invalidate,
  * after clearing the client cache).
  */
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AdpMode, AdpRecord, AppSettings } from './types.ts';
 import { adpCacheKey, adpModeFor } from './adp.ts';
-import { deriveScoringFormat } from './settings.ts';
 import { deleteAdpCache, getAdpCache, setAdpCache } from './storage.ts';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { deriveScoringFormat } from './settings.ts';
 import { fetchBeatAdp } from '../server/beatadp.ts';
 import { fetchKonaLeague } from '../server/kona.ts';
 
@@ -76,33 +76,36 @@ async function fetchRecords(
 
 function toRecords(
   table: {
-    rows: Array<{
+    rows: {
       name: string;
       team: string | null;
       consensus: number | null;
       sleeper: number | null;
       espn: number | null;
       yahoo: number | null;
-    }>;
+    }[];
   },
   platform: 'ESPN' | 'Yahoo' | 'Sleeper',
 ): AdpRecord[] {
   const records: AdpRecord[] = [];
   for (const row of table.rows) {
-    let value: number | null;
+    let value: number | null = null;
     switch (platform) {
-      case 'Yahoo':
-        value = row.yahoo;
-        break;
-      case 'Sleeper':
-        value = row.sleeper;
-        break;
-      default:
+      case 'ESPN': {
         value = row.espn;
         break;
+      }
+      case 'Yahoo': {
+        value = row.yahoo;
+        break;
+      }
+      case 'Sleeper': {
+        value = row.sleeper;
+        break;
+      }
     }
-    const source = value !== null ? 'platform' : 'consensus';
-    const adp = value !== null ? value : row.consensus;
+    const source = value === null ? 'consensus' : 'platform';
+    const adp = value ?? row.consensus;
     records.push({
       key: row.name,
       name: row.name,
@@ -124,7 +127,9 @@ export function useAdp(settings: AppSettings): AdpQueryResult {
     queryKey: ['adp', cacheKey, degraded ? 'degraded' : 'normal'],
     queryFn: async () => {
       const cached = await getAdpCache(cacheKey);
-      if (cached !== null) return { records: cached.data, fetchedAt: cached.fetchedAt };
+      if (cached !== null) {
+        return { records: cached.data, fetchedAt: cached.fetchedAt };
+      }
       const fetched = await fetchRecords(settings, mode);
       await setAdpCache(cacheKey, fetched.records);
       return fetched;

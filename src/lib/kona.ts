@@ -54,73 +54,26 @@ const LINEUP_SLOTS = {
  * Accepts `unknown` and parses defensively (no type assertions).
  */
 export function mapKonaSettings(json: unknown): LeagueSettings | null {
-  let size: unknown;
-  let scoringItems: unknown;
-  let lineupSlotCounts: unknown;
-  let keeperCount: unknown;
-  let keeperCountFuture: unknown;
-  let draftType: unknown;
-  for (const [key, value] of entriesOf(json)) {
-    if (key === 'size') size = value;
-    if (key === 'scoringSettings') {
-      for (const [k, v] of entriesOf(value)) {
-        if (k === 'scoringItems') scoringItems = v;
-      }
-    }
-    if (key === 'rosterSettings') {
-      for (const [k, v] of entriesOf(value)) {
-        if (k === 'lineupSlotCounts') lineupSlotCounts = v;
-      }
-    }
-    if (key === 'draftSettings') {
-      for (const [k, v] of entriesOf(value)) {
-        if (k === 'keeperCount') keeperCount = v;
-        if (k === 'keeperCountFuture') keeperCountFuture = v;
-        if (k === 'type') draftType = v;
-      }
-    }
-  }
-  if (typeof size !== 'number') return null;
-
-  const byId = new Map<number, KonaScoringItem>();
-  if (Array.isArray(scoringItems)) {
-    for (const item of scoringItems) {
-      let statId: unknown;
-      let points: unknown;
-      let pointsOverrides: unknown;
-      for (const [key, value] of entriesOf(item)) {
-        if (key === 'statId') statId = value;
-        if (key === 'points') points = value;
-        if (key === 'pointsOverrides') pointsOverrides = value;
-      }
-      if (typeof statId !== 'number' || typeof points !== 'number') continue;
-      const overrides: Record<string, number> = {};
-      for (const [slot, rate] of entriesOf(pointsOverrides)) {
-        if (typeof rate === 'number') overrides[slot] = rate;
-      }
-      byId.set(statId, { statId, points, pointsOverrides: overrides });
-    }
+  const entries = new Map(entriesOf(json));
+  const size = entries.get('size');
+  const scoringItems = new Map(entriesOf(entries.get('scoringSettings'))).get('scoringItems');
+  const lineupSlotCounts = new Map(entriesOf(entries.get('rosterSettings'))).get('lineupSlotCounts');
+  const draftSettings = new Map(entriesOf(entries.get('draftSettings')));
+  const keeperCount = draftSettings.get('keeperCount');
+  const keeperCountFuture = draftSettings.get('keeperCountFuture');
+  const draftType = draftSettings.get('type');
+  if (typeof size !== 'number') {
+    return null;
   }
 
-  const scoring = { ...defaultScoringRates() };
-  for (const [statId, key] of Object.entries(STAT_ID_MAP)) {
-    const item = byId.get(Number(statId));
-    if (item === undefined) continue;
-    const value = item.pointsOverrides?.['16'] ?? item.points;
-    scoring[key] = value;
-  }
-  // A league PPR value writes all three RECEPTIONS fields (§5.4).
-  const pprItem = RECEPTION_STAT_IDS.map((id) => byId.get(Number(id))).find((item) => item !== undefined);
-  if (pprItem !== undefined) {
-    const ppr = pprItem.pointsOverrides?.['16'] ?? pprItem.points;
-    scoring.receptionsRb = ppr;
-    scoring.receptionsWr = ppr;
-    scoring.receptionsTe = ppr;
-  }
+  const byId = parseScoringItems(scoringItems);
+  const scoring = scoringFromItems(byId);
 
   const counts = new Map<string, number>();
   for (const [slot, count] of entriesOf(lineupSlotCounts)) {
-    if (typeof count === 'number') counts.set(slot, count);
+    if (typeof count === 'number') {
+      counts.set(slot, count);
+    }
   }
   const countOf = (slot: number): number => counts.get(String(slot)) ?? 0;
   // Slot 20 is SUPERFLEX when its count is small; large counts are bench slots
@@ -150,8 +103,54 @@ export function mapKonaSettings(json: unknown): LeagueSettings | null {
   };
 }
 
-function entriesOf(value: unknown): Array<[string, unknown]> {
-  if (typeof value !== 'object' || value === null) return [];
+function parseScoringItems(scoringItems: unknown): Map<number, KonaScoringItem> {
+  const byId = new Map<number, KonaScoringItem>();
+  if (Array.isArray(scoringItems)) {
+    for (const item of scoringItems) {
+      const itemEntries = new Map(entriesOf(item));
+      const statId = itemEntries.get('statId');
+      const points = itemEntries.get('points');
+      const pointsOverrides = itemEntries.get('pointsOverrides');
+      if (typeof statId !== 'number' || typeof points !== 'number') {
+        continue;
+      }
+      const overrides: Record<string, number> = {};
+      for (const [slot, rate] of entriesOf(pointsOverrides)) {
+        if (typeof rate === 'number') {
+          overrides[slot] = rate;
+        }
+      }
+      byId.set(statId, { statId, points, pointsOverrides: overrides });
+    }
+  }
+  return byId;
+}
+
+function scoringFromItems(byId: Map<number, KonaScoringItem>): ScoringSettings {
+  const scoring = { ...defaultScoringRates() };
+  for (const [statId, key] of Object.entries(STAT_ID_MAP)) {
+    const item = byId.get(Number(statId));
+    if (item === undefined) {
+      continue;
+    }
+    const value = item.pointsOverrides?.['16'] ?? item.points;
+    scoring[key] = value;
+  }
+  // A league PPR value writes all three RECEPTIONS fields (§5.4).
+  const pprItem = RECEPTION_STAT_IDS.map((id) => byId.get(Number(id))).find((item) => item !== undefined);
+  if (pprItem !== undefined) {
+    const ppr = pprItem.pointsOverrides?.['16'] ?? pprItem.points;
+    scoring.receptionsRb = ppr;
+    scoring.receptionsWr = ppr;
+    scoring.receptionsTe = ppr;
+  }
+  return scoring;
+}
+
+function entriesOf(value: unknown): [string, unknown][] {
+  if (typeof value !== 'object' || value === null) {
+    return [];
+  }
   return Object.entries(value);
 }
 
@@ -187,50 +186,36 @@ function defaultScoringRates(): ScoringSettings {
  */
 export function konaVariant(settings: LeagueSettings): 'SUPERFLEX' | 'PPR' | 'STANDARD' {
   const qbType = deriveQbType(settings.roster);
-  if (qbType === '2QB') return 'SUPERFLEX';
-  return settings.scoring.receptionsRb !== 0 ? 'PPR' : 'STANDARD';
+  if (qbType === '2QB') {
+    return 'SUPERFLEX';
+  }
+  return settings.scoring.receptionsRb === 0 ? 'STANDARD' : 'PPR';
 }
 
 /** Map the kona player pool into AdpRecords. All players have ADP (probe: 0 missing). */
 export function mapKonaPlayers(json: unknown, variant: 'SUPERFLEX' | 'PPR' | 'STANDARD'): AdpRecord[] {
   const records: AdpRecord[] = [];
-  let wrappers: unknown;
-  for (const [key, value] of entriesOf(json)) {
-    if (key === 'players') wrappers = value;
+  const wrappers = new Map(entriesOf(json)).get('players');
+  if (!Array.isArray(wrappers)) {
+    return records;
   }
-  if (!Array.isArray(wrappers)) return records;
   for (const wrapper of wrappers) {
-    let player: unknown;
-    for (const [key, value] of entriesOf(wrapper)) {
-      if (key === 'player') player = value;
+    const playerEntries = new Map(entriesOf(wrapper));
+    const player = playerEntries.get('player');
+    const fields = new Map(entriesOf(player));
+    const fullName = fields.get('fullName');
+    const proTeamId = fields.get('proTeamId');
+    const defaultPositionId = fields.get('defaultPositionId');
+    const averageDraftPosition = new Map(entriesOf(fields.get('ownership'))).get('averageDraftPosition');
+    const draftRanks = new Map(entriesOf(fields.get('draftRanksByRankType')));
+    const rank = new Map(entriesOf(draftRanks.get(variant))).get('rank');
+    if (typeof fullName !== 'string') {
+      continue;
     }
-    let fullName: unknown;
-    let proTeamId: unknown;
-    let defaultPositionId: unknown;
-    let averageDraftPosition: unknown;
-    let rank: unknown;
-    for (const [key, value] of entriesOf(player)) {
-      if (key === 'fullName') fullName = value;
-      if (key === 'proTeamId') proTeamId = value;
-      if (key === 'defaultPositionId') defaultPositionId = value;
-      if (key === 'ownership') {
-        for (const [k, v] of entriesOf(value)) {
-          if (k === 'averageDraftPosition') averageDraftPosition = v;
-        }
-      }
-      if (key === 'draftRanksByRankType') {
-        for (const [k, v] of entriesOf(value)) {
-          if (k === variant) {
-            for (const [rk, rv] of entriesOf(v)) {
-              if (rk === 'rank') rank = rv;
-            }
-          }
-        }
-      }
-    }
-    if (typeof fullName !== 'string') continue;
     const position = typeof defaultPositionId === 'number' ? positionFromCode(defaultPositionId) : null;
-    if (position === null) continue;
+    if (position === null) {
+      continue;
+    }
     const team = typeof proTeamId === 'number' ? teamByProTeamId(proTeamId) : null;
     const adp = typeof averageDraftPosition === 'number' ? averageDraftPosition : null;
     records.push({

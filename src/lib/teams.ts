@@ -92,15 +92,25 @@ const FULL_NAME_MAP: Readonly<Record<string, string>> = Object.fromEntries(
 /** Normalize an external team token (code, `WAS`/`WSH`, full name, city, nickname) → internal code. */
 export function normalizeTeam(raw: string): string | null {
   const token = raw.trim().toLowerCase();
-  if (token === '') return null;
+  if (token === '') {
+    return null;
+  }
   const asCode = CODE_MAP[token.toUpperCase()];
-  if (asCode !== undefined) return asCode;
+  if (asCode !== undefined) {
+    return asCode;
+  }
   // Washington appears as `WAS` on the Rankings sheet (spec §3.1/§4).
-  if (token === 'was') return 'WSH';
+  if (token === 'was') {
+    return 'WSH';
+  }
   const byFull = FULL_NAME_MAP[token];
-  if (byFull !== undefined) return byFull;
+  if (byFull !== undefined) {
+    return byFull;
+  }
   for (const t of TEAMS) {
-    if (t.city.toLowerCase() === token || t.nickname.toLowerCase() === token) return t.code;
+    if (t.city.toLowerCase() === token || t.nickname.toLowerCase() === token) {
+      return t.code;
+    }
   }
   return null;
 }
@@ -120,9 +130,11 @@ export function teamByProTeamId(proTeamId: number): string | null {
  */
 export function normalizeDefenseName(name: string, teamToken?: string | null): string | null {
   const fromToken = teamToken === undefined || teamToken === null ? null : normalizeTeam(teamToken);
-  const trimmed = name.trim().replace(/\s+D\/ST$/i, '');
+  const trimmed = name.trim().replace(/\s+D\/ST$/iu, '');
   const fromName = normalizeTeam(trimmed);
-  if (fromToken !== null && fromToken !== fromName) return null;
+  if (fromToken !== null && fromToken !== fromName) {
+    return null;
+  }
   return fromName ?? fromToken;
 }
 
@@ -130,34 +142,32 @@ export function defenseNameFor(code: string): string {
   return teamInfo(code)?.full ?? code;
 }
 
+/** ESPN v3 defaultPositionId per app position (positionFromCode's inverse). */
+const POSITION_CODES: Record<Position, number> = { QB: 1, RB: 2, WR: 3, TE: 4, DST: 16 };
+
 export function positionCode(position: Position): number {
-  switch (position) {
-    case 'QB':
-      return 1;
-    case 'RB':
-      return 2;
-    case 'WR':
-      return 3;
-    case 'TE':
-      return 4;
-    case 'DST':
-      return 16;
-  }
+  return POSITION_CODES[position];
 }
 
 export function positionFromCode(code: number): Position | null {
   switch (code) {
-    case 1:
+    case 1: {
       return 'QB';
-    case 2:
+    }
+    case 2: {
       return 'RB';
-    case 3:
+    }
+    case 3: {
       return 'WR';
-    case 4:
+    }
+    case 4: {
       return 'TE';
-    case 16:
+    }
+    case 16: {
       return 'DST';
-    default:
+    }
+    default: {
       return null;
+    }
   }
 }

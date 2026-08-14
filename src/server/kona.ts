@@ -4,9 +4,9 @@
  * in-memory cache) — the only kona cache is the client-side IndexedDB adpCache.
  * `espn_s2`/`SWID` are transmitted per request and never retained (§5.5).
  */
-import { createServerFn } from '@tanstack/react-start';
 import type { AdpRecord, LeagueSettings } from '../lib/types.ts';
 import { konaVariant, mapKonaPlayers, mapKonaSettings } from '../lib/kona.ts';
+import { createServerFn } from '@tanstack/react-start';
 
 export type KonaRequest = {
   season: number;
@@ -72,13 +72,17 @@ export async function fetchKonaLeagueData(data: KonaRequest): Promise<KonaResult
 
 /** The mSettings view wraps the league settings under a `settings` key. */
 function unwrapSettings(json: unknown): unknown {
-  if (typeof json !== 'object' || json === null) return json;
+  if (typeof json !== 'object' || json === null) {
+    return json;
+  }
   for (const [key, value] of Object.entries(json)) {
-    if (key === 'settings') return value;
+    if (key === 'settings') {
+      return value;
+    }
   }
   return json;
 }
 
 export const fetchKonaLeague = createServerFn({ method: 'POST' })
   .validator((input: KonaRequest) => input)
-  .handler(async ({ data }) => fetchKonaLeagueData(data));
+  .handler(({ data }) => fetchKonaLeagueData(data));

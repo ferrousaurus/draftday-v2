@@ -3,10 +3,10 @@
  * team-code unification (WAS → WSH, full names, nicknames, ESPN proTeamId),
  * exact (name, team) preference, and the (name, position) fallback.
  */
+import type { AdpRecord, PlayerRecord } from '../lib/types.ts';
 import { describe, expect, it } from 'vitest';
 import { matchAdp, normalizeName, teamOfCodeOrId } from '../lib/matching.ts';
 import { normalizeDefenseName, normalizeTeam, teamByProTeamId, teamInfo } from '../lib/teams.ts';
-import type { AdpRecord, PlayerRecord } from '../lib/types.ts';
 
 describe('normalizeName (§4)', () => {
   it('strips punctuation, suffixes and diacritics, and case-folds', () => {
@@ -42,7 +42,7 @@ describe('team mapping (§4)', () => {
     expect(teamByProTeamId(34)).toBe('HOU');
     expect(teamByProTeamId(999)).toBeNull();
     expect(teamOfCodeOrId('', 25)).toBe('SF');
-    expect(teamOfCodeOrId('LV', undefined)).toBe('LV');
+    expect(teamOfCodeOrId('LV')).toBe('LV');
   });
 
   it('resolves defense names (nickname D/ST and full names)', () => {
@@ -136,7 +136,9 @@ describe('matchAdp (§4)', () => {
 
   it('prefers the position-matching record when a name+team key collides', () => {
     const allen = workbook.find((p) => p.id === 'QB:Josh Allen');
-    if (allen === undefined) throw new Error('fixture player missing');
+    if (allen === undefined) {
+      throw new Error('fixture player missing');
+    }
     const colliding: AdpRecord[] = [
       { key: 'QB:Josh Allen', name: 'Josh Allen', team: 'BUF', position: 'QB', adp: 10, source: 'platform' },
       { key: 'TE:Josh Allen', name: 'Josh Allen', team: 'BUF', position: 'TE', adp: 999, source: 'platform' },

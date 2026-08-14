@@ -5,9 +5,10 @@
  * `(scoringFormat, draftType, qbType)` with midnight-UTC expiry. Empty results
  * are cached under the same key (no special-casing).
  */
-import { createServerFn } from '@tanstack/react-start';
 import type { DraftType, QbType, ScoringFormat } from '../lib/types.ts';
-import { parseBeatAdpHtml, type ParsedBeatAdpTable } from '../lib/beatadp-html.ts';
+import { type ParsedBeatAdpTable, parseBeatAdpHtml } from '../lib/beatadp-html.ts';
+import { createServerFn } from '@tanstack/react-start';
+import { entriesOf } from '../lib/object-entries.ts';
 import { msUntilNextUtcMidnight } from '../lib/time.ts';
 import { openKv } from './kv.ts';
 
@@ -40,20 +41,22 @@ function cacheKey(params: { scoringFormat: ScoringFormat; draftType: DraftType; 
 type CachedBeatAdp = { data: ParsedBeatAdpTable | null; fetchedAt: number };
 
 function isCachedBeatAdp(value: unknown): value is CachedBeatAdp {
-  if (typeof value !== 'object' || value === null) return false;
-  let data: unknown;
-  let fetchedAt: unknown;
-  for (const [key, v] of Object.entries(value)) {
-    if (key === 'data') data = v;
-    if (key === 'fetchedAt') fetchedAt = v;
+  if (typeof value !== 'object' || value === null) {
+    return false;
   }
-  if (typeof fetchedAt !== 'number') return false;
-  if (data === null) return true;
-  if (typeof data !== 'object' || data === null) return false;
-  let rows: unknown;
-  for (const [key, v] of Object.entries(data)) {
-    if (key === 'rows') rows = v;
+  const entries = new Map(entriesOf(value));
+  const data = entries.get('data');
+  const fetchedAt = entries.get('fetchedAt');
+  if (typeof fetchedAt !== 'number') {
+    return false;
   }
+  if (data === null) {
+    return true;
+  }
+  if (typeof data !== 'object') {
+    return false;
+  }
+  const rows = new Map(entriesOf(data)).get('rows');
   return Array.isArray(rows);
 }
 
@@ -64,7 +67,9 @@ export async function getCachedBeatAdp(params: {
 }): Promise<CachedBeatAdp | null> {
   const kv = await openKv();
   const entry = await kv.get(cacheKey(params));
-  if (!isCachedBeatAdp(entry.value)) return null;
+  if (!isCachedBeatAdp(entry.value)) {
+    return null;
+  }
   return entry.value;
 }
 
@@ -98,7 +103,9 @@ export async function fetchBeatAdpData(params: {
   qbType: QbType;
 }): Promise<BeatAdpResult> {
   const cached = await getCachedBeatAdp(params);
-  if (cached !== null) return { table: cached.data, fetchedAt: cached.fetchedAt };
+  if (cached !== null) {
+    return { table: cached.data, fetchedAt: cached.fetchedAt };
+  }
   const table = await scrape(params);
   const fetchedAt = Date.now();
   await putCachedBeatAdp(params, { data: table, fetchedAt });
@@ -107,4 +114,4 @@ export async function fetchBeatAdpData(params: {
 
 export const fetchBeatAdp = createServerFn({ method: 'POST' })
   .validator((input: BeatAdpRequest) => input)
-  .handler(async ({ data }) => fetchBeatAdpData(data));
+  .handler(({ data }) => fetchBeatAdpData(data));

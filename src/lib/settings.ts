@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import type { AppSettings, DraftType, Platform, QbType, ScoringFormat } from './types.ts';
+import { z } from 'zod';
 
 /** Default scoring table (§3.2). */
 export const DEFAULT_SCORING = {
@@ -115,7 +115,9 @@ export function pprPreset(receptions: { rb: number; wr: number; te: number }): P
   const { rb, wr, te } = receptions;
   if (rb === wr && wr === te) {
     const preset = PPR_PRESETS.find((p) => p === rb);
-    if (preset !== undefined) return preset;
+    if (preset !== undefined) {
+      return preset;
+    }
   }
   return 'custom';
 }
@@ -131,8 +133,12 @@ export function deriveQbType(roster: { startingQb: number; superflex: number }):
  */
 export function deriveScoringFormat(receptions: { rb: number; wr: number; te: number }): ScoringFormat {
   const preset = pprPreset(receptions);
-  if (preset === 0) return 'STANDARD';
-  if (preset === 0.5) return 'HALF_PPR';
+  if (preset === 0) {
+    return 'STANDARD';
+  }
+  if (preset === 0.5) {
+    return 'HALF_PPR';
+  }
   return 'PPR';
 }
 

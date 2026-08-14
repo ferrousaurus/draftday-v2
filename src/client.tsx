@@ -1,8 +1,8 @@
-import { StrictMode, startTransition } from 'react';
-import { hydrateRoot } from 'react-dom/client';
-import { StartClient } from '@tanstack/react-start/client';
 import '@mantine/core/styles.css';
 import '@mantine/dropzone/styles.css';
+import { StrictMode, startTransition } from 'react';
+import { StartClient } from '@tanstack/react-start/client';
+import { hydrateRoot } from 'react-dom/client';
 
 startTransition(() => {
   hydrateRoot(

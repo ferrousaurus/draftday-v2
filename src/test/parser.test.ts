@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseWorkbook } from '../lib/workbook/parser.ts';
 
-const FIXTURE = new URL('./fixtures/synthetic.xlsx', import.meta.url);
+const FIXTURE = new URL('fixtures/synthetic.xlsx', import.meta.url);
 
 async function parseFixture() {
   const bytes = await Deno.readFile(FIXTURE);
@@ -61,7 +61,7 @@ describe('parseWorkbook (synthetic fixture)', () => {
   it('attaches opaque Player IDs from the Rankings sheet', async () => {
     const players = await parseFixture();
     const allen = players.find((p) => p.name === 'Josh Allen');
-    expect(allen?.playerId).toBe(17298);
+    expect(allen?.playerId).toBe(17_298);
     const dst = players.find((p) => p.position === 'DST');
     expect(dst?.playerId).toBeNull();
     expect(players.every((p) => p.ref >= 1)).toBe(true);

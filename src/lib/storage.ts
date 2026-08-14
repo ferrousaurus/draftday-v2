@@ -5,9 +5,9 @@
  * (`settings`, `drafted`) which use the custom IndexedDB adapter below.
  * No localStorage anywhere.
  */
+import type { AdpRecord, PlayerRecord } from './types.ts';
 import { del, get, set } from 'idb-keyval';
 import type { StateStorage } from 'zustand/middleware';
-import type { AdpRecord, AppSettings, PlayerRecord } from './types.ts';
 import { msUntilNextUtcMidnightMs } from './time.ts';
 
 export const FILE_KEY = 'file';
@@ -17,7 +17,7 @@ export const ADP_CACHE_KEY = 'adpCache';
 export type AdpCacheEntry = { data: AdpRecord[]; fetchedAt: number };
 
 export async function loadFile(): Promise<ArrayBuffer | null> {
-  const v = await get(FILE_KEY);
+  const v = await get<unknown>(FILE_KEY);
   return v instanceof ArrayBuffer ? v : null;
 }
 
@@ -30,31 +30,21 @@ export async function clearFile(): Promise<void> {
 }
 
 export async function loadPlayers(): Promise<PlayerRecord[] | null> {
-  const v = await get(PLAYERS_KEY);
-  return Array.isArray(v) && v.every(isPlayerRecord) ? v : null;
+  const v = await get<unknown>(PLAYERS_KEY);
+  return Array.isArray(v) && v.every((x) => isPlayerRecord(x)) ? v : null;
 }
 
 function isPlayerRecord(value: unknown): value is PlayerRecord {
-  let id: unknown;
-  let position: unknown;
-  let name: unknown;
-  let team: unknown;
-  let bye: unknown;
-  let rawStats: unknown;
-  let filePoints: unknown;
-  let playerId: unknown;
-  let ref: unknown;
-  for (const [key, v] of entriesOf(value)) {
-    if (key === 'id') id = v;
-    if (key === 'position') position = v;
-    if (key === 'name') name = v;
-    if (key === 'team') team = v;
-    if (key === 'bye') bye = v;
-    if (key === 'rawStats') rawStats = v;
-    if (key === 'filePoints') filePoints = v;
-    if (key === 'playerId') playerId = v;
-    if (key === 'ref') ref = v;
-  }
+  const entries = new Map(entriesOf(value));
+  const id = entries.get('id');
+  const position = entries.get('position');
+  const name = entries.get('name');
+  const team = entries.get('team');
+  const bye = entries.get('bye');
+  const rawStats = entries.get('rawStats');
+  const filePoints = entries.get('filePoints');
+  const playerId = entries.get('playerId');
+  const ref = entries.get('ref');
   return (
     typeof id === 'string' &&
     typeof position === 'string' &&
@@ -70,8 +60,10 @@ function isPlayerRecord(value: unknown): value is PlayerRecord {
 }
 
 /** Narrow unknown objects to entry tuples without type assertions. */
-function entriesOf(value: unknown): Array<[string, unknown]> {
-  if (typeof value !== 'object' || value === null) return [];
+function entriesOf(value: unknown): [string, unknown][] {
+  if (typeof value !== 'object' || value === null) {
+    return [];
+  }
   return Object.entries(value);
 }
 
@@ -92,7 +84,9 @@ function todayUtcMidnight(nowEpochMs: number): number {
 export async function getAdpCache(providerKey: string): Promise<AdpCacheEntry | null> {
   const cache = await readAdpCache();
   const entry = cache[providerKey];
-  if (entry === undefined || !isAdpEntryFresh(entry)) return null;
+  if (entry === undefined || !isAdpEntryFresh(entry)) {
+    return null;
+  }
   return entry;
 }
 
@@ -109,34 +103,33 @@ export async function deleteAdpCache(providerKey: string): Promise<void> {
 }
 
 async function readAdpCache(): Promise<Record<string, AdpCacheEntry>> {
-  const v = await get(ADP_CACHE_KEY);
+  const v = await get<unknown>(ADP_CACHE_KEY);
   const out: Record<string, AdpCacheEntry> = {};
   for (const [key, entry] of entriesOf(v)) {
     const parsed = parseAdpCacheEntry(entry);
-    if (parsed !== null) out[key] = parsed;
+    if (parsed !== null) {
+      out[key] = parsed;
+    }
   }
   return out;
 }
 
 function parseAdpCacheEntry(value: unknown): AdpCacheEntry | null {
-  let data: unknown;
-  let fetchedAt: unknown;
-  for (const [key, v] of entriesOf(value)) {
-    if (key === 'data') data = v;
-    if (key === 'fetchedAt') fetchedAt = v;
+  const entries = new Map(entriesOf(value));
+  const data = entries.get('data');
+  const fetchedAt = entries.get('fetchedAt');
+  if (!Array.isArray(data) || typeof fetchedAt !== 'number') {
+    return null;
   }
-  if (!Array.isArray(data) || typeof fetchedAt !== 'number') return null;
   const records: AdpRecord[] = [];
   for (const record of data) {
-    if (typeof record !== 'object' || record === null) continue;
-    let name: unknown;
-    let team: unknown;
-    let adp: unknown;
-    for (const [key, v] of entriesOf(record)) {
-      if (key === 'name') name = v;
-      if (key === 'team') team = v;
-      if (key === 'adp') adp = v;
+    if (typeof record !== 'object' || record === null) {
+      continue;
     }
+    const fields = new Map(entriesOf(record));
+    const name = fields.get('name');
+    const team = fields.get('team');
+    const adp = fields.get('adp');
     if (typeof name === 'string' && typeof team === 'string' && (typeof adp === 'number' || adp === null)) {
       records.push({ key: name, name, team, position: null, adp, source: 'platform' });
     }
@@ -152,7 +145,7 @@ async function writeAdpCache(cache: Record<string, AdpCacheEntry>): Promise<void
 export function createIndexedDbStorage(name: string): StateStorage {
   return {
     getItem: async (key) => {
-      const value = await get(`${name}:${key}`);
+      const value = await get<unknown>(`${name}:${key}`);
       return typeof value === 'string' ? value : null;
     },
     setItem: async (key, value) => {
@@ -173,4 +166,4 @@ export function ttlUntilMidnight(): number {
   return msUntilNextUtcMidnightMs(Date.now());
 }
 
-export type { AppSettings };
+export type { AppSettings } from './types.ts';

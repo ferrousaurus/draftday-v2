@@ -41,7 +41,9 @@ export const Route = createFileRoute('/')({
   component: SetupPage,
 });
 
-function SetupPage() {
+export type SetupPageProps = Record<string, never>;
+
+export function SetupPage(_props: Readonly<SetupPageProps>) {
   const players = usePlayersStore((s) => s.players);
   const setPlayers = usePlayersStore((s) => s.setPlayers);
   const settings = useSettingsStore((s) => s.settings);

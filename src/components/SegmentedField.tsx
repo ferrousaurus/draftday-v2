@@ -1,6 +1,6 @@
 import { SegmentedControl } from '@mantine/core';
 
-type SegmentedFieldProps<T extends string> = {
+export type SegmentedFieldProps<T extends string> = {
   label: string;
   value: T;
   data: readonly { value: T; label: string }[];

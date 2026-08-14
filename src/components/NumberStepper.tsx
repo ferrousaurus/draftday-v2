@@ -1,6 +1,6 @@
 import { NumberInput, Stack } from '@mantine/core';
 
-type NumberStepperProps = {
+export type NumberStepperProps = {
   label: string;
   value: number;
   min: number;
@@ -11,7 +11,15 @@ type NumberStepperProps = {
 };
 
 /** Free numeric stepper; validation-only bounds (never UI-blocking, §3.2). */
-export function NumberStepper({ label, value, min, max, step = 1, disabled = false, onChange }: NumberStepperProps) {
+export function NumberStepper({
+  label,
+  value,
+  min,
+  max,
+  step = 1,
+  disabled = false,
+  onChange,
+}: Readonly<NumberStepperProps>) {
   return (
     <Stack gap={0}>
       <div>{label}</div>

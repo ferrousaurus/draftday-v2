@@ -12,7 +12,7 @@ type SettingsPanelProps = {
 };
 
 /** The settings panel (§3.2, §5.4): app-owned defaults or league-locked values; never from the workbook. */
-export function SettingsPanel({ settings, locked, onChange }: SettingsPanelProps) {
+export function SettingsPanel({ settings, locked, onChange }: Readonly<SettingsPanelProps>) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const { scoring, roster } = settings;
 

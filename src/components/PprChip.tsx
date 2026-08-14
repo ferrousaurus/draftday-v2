@@ -2,7 +2,7 @@ import { PPR_PRESETS, pprPreset, receptionsFromPpr } from '../lib/settings.ts';
 import { SegmentedControl, Stack } from '@mantine/core';
 import { NumberStepper } from './NumberStepper.tsx';
 
-type PprChipProps = {
+export type PprChipProps = {
   receptions: { rb: number; wr: number; te: number };
   onChange: (receptions: { rb: number; wr: number; te: number }) => void;
   disabled?: boolean;

@@ -66,7 +66,9 @@ function waitForHydration(): Promise<AppSettings> {
 }
 
 /** Restore flow (§7): with file + players + settings, navigate straight to /board. */
-function BootRestore() {
+export type BootRestoreProps = Record<string, never>;
+
+export function BootRestore(_props: Readonly<BootRestoreProps>) {
   const navigate = useNavigate({ from: '/' });
 
   useEffect(() => {

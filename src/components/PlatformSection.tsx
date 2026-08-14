@@ -4,7 +4,7 @@ import { draftTypeOptions, platformHasLeagueAware, scoringFormatLabel } from '..
 import type { AppSettings } from '../lib/types.ts';
 import { SegmentedField } from './SegmentedField.tsx';
 
-type PlatformSectionProps = {
+export type PlatformSectionProps = {
   settings: AppSettings;
   onChange: (next: AppSettings) => void;
   locked: boolean;

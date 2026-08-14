@@ -2,20 +2,19 @@
  * Player matching (§4): workbook players ↔ provider players by normalized
  * name + team (+ position as tiebreaker). No fuzzy matching in v1.
  */
-import type { AdpRecord, PlayerAdp, PlayerRecord } from './types.ts';
 import { normalizeTeam, teamByProTeamId } from './teams.ts';
+import type { AdpRecord, PlayerAdp, PlayerRecord } from "./types.ts";
 
 const SUFFIXES = /(?:^|\s)(?:jr\.?|sr\.?|ii|iii|iv|v)$/u;
 
 /** Strip punctuation, suffixes (Jr./Sr./II/III), diacritics; case-fold (§4). */
-export function normalizeName(name: string): string {
-  return name
+export const normalizeName = (name: string) =>
+  name
     .normalize('NFD')
     .replaceAll(/[\u0300-\u036F]/gu, '')
     .toLowerCase()
     .replace(SUFFIXES, '')
     .replaceAll(/[^a-z0-9]/gu, '');
-}
 
 /**
  * Attach provider ADP records to workbook players. Match quality: exact

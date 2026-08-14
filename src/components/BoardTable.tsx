@@ -20,7 +20,7 @@ import { positionBadgeColor } from '../lib/position-colors.ts';
 
 export type BoardSort = { id: string; desc: boolean } | null;
 
-type BoardTableProps = {
+export type BoardTableProps = {
   rows: BoardPlayer[];
   drafted: ReadonlySet<string>;
   onToggleDrafted: (playerId: string) => void;
@@ -154,20 +154,17 @@ type BoardRowProps = {
  * them. adpLoading changes still re-render all rows (intended; only during ADP
  * fetches).
  */
-function boardRowPropsEqual(prev: BoardRowProps, next: BoardRowProps): boolean {
-  return (
-    prev.row.id === next.row.id &&
-    prev.row.original === next.row.original &&
-    prev.flag === next.flag &&
-    prev.isDrafted === next.isDrafted &&
-    prev.adpLoading === next.adpLoading &&
-    prev.onToggleDrafted === next.onToggleDrafted &&
-    prev.onToggleFlag === next.onToggleFlag
-  );
-}
+const boardRowPropsEqual = (prev: BoardRowProps, next: BoardRowProps) =>
+  prev.row.id === next.row.id &&
+  prev.row.original === next.row.original &&
+  prev.flag === next.flag &&
+  prev.isDrafted === next.isDrafted &&
+  prev.adpLoading === next.adpLoading &&
+  prev.onToggleDrafted === next.onToggleDrafted &&
+  prev.onToggleFlag === next.onToggleFlag;
 
 /** Plain row renderer; wrapped in memo() below so a toggle re-renders exactly this row. */
-function BoardRowInner({ row, flag, isDrafted, adpLoading, onToggleDrafted, onToggleFlag }: BoardRowProps) {
+function BoardRowInner({ row, flag, isDrafted, adpLoading, onToggleDrafted, onToggleFlag }: Readonly<BoardRowProps>) {
   const accent = rowAccent(isDrafted, flag);
   return (
     <Table.Tr style={accent}>
@@ -192,8 +189,8 @@ function BoardRowInner({ row, flag, isDrafted, adpLoading, onToggleDrafted, onTo
 const BoardRow = memo(BoardRowInner, boardRowPropsEqual);
 
 /** Flag buttons render from the memoized BoardRow, so the column cell stays null to keep columns stable across toggles. */
-function buildColumns(platform: Platform) {
-  return helper.columns([
+const buildColumns = (platform: Platform) =>
+  helper.columns([
     helper.display({
       id: 'flag',
       header: 'Flag',
@@ -270,7 +267,6 @@ function buildColumns(platform: Platform) {
       },
     }),
   ]);
-}
 
 export function BoardTable({
   rows,
@@ -282,7 +278,7 @@ export function BoardTable({
   onSortChange,
   adpLoading,
   platform,
-}: BoardTableProps) {
+}: Readonly<BoardTableProps>) {
   const columns = useMemo(() => buildColumns(platform), [platform]);
 
   const currentSorting = sort === null ? [] : [sort];

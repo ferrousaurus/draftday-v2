@@ -1,13 +1,13 @@
 import { Group, Paper, Stack, Text } from '@mantine/core';
 import { Dropzone } from '@mantine/dropzone';
 
-type DropzoneCardProps = {
+export type DropzoneCardProps = {
   onFile: (file: File) => void;
   disabled?: boolean;
 };
 
 /** The landing dropzone (§8.1): accepts an Athletic projections `.xlsx`. */
-export function DropzoneCard({ onFile, disabled = false }: DropzoneCardProps) {
+export function DropzoneCard({ onFile, disabled = false }: Readonly<DropzoneCardProps>) {
   return (
     <Paper withBorder p="md">
       <Dropzone

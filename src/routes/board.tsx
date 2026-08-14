@@ -19,7 +19,9 @@ export const Route = createFileRoute('/board')({
   validateSearch: parseBoardSearch,
 });
 
-function BoardPage() {
+export type BoardPageProps = Record<string, never>;
+
+export function BoardPage(_props: Readonly<BoardPageProps>) {
   const navigate = useNavigate({ from: '/board' });
   const search = Route.useSearch();
 

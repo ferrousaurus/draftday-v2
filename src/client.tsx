@@ -1,5 +1,3 @@
-import '@mantine/core/styles.css';
-import '@mantine/dropzone/styles.css';
 import { StrictMode, startTransition } from 'react';
 import { StartClient } from '@tanstack/react-start/client';
 import { hydrateRoot } from 'react-dom/client';

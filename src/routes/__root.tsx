@@ -1,11 +1,12 @@
-import { HeadContent, Outlet, Scripts, createRootRoute, useNavigate } from '@tanstack/react-router';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { loadFile, loadPlayers } from '../lib/storage.ts';
-import { usePlayersStore, useSettingsStore } from '../lib/store.ts';
-import type { AppSettings } from '../lib/types.ts';
-import { BOARD_SEARCH_DEFAULTS } from '../lib/board-search.ts';
-import { MantineProvider } from '@mantine/core';
-import { useEffect } from 'react';
+import { HeadContent, Outlet, Scripts, createRootRoute, useNavigate } from "@tanstack/react-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { loadFile, loadPlayers } from "../lib/storage.ts";
+import { usePlayersStore, useSettingsStore } from "../lib/store.ts";
+import type { AppSettings } from "../lib/types.ts";
+import { BOARD_SEARCH_DEFAULTS } from "../lib/board-search.ts";
+import { MantineProvider } from "@mantine/core";
+import cssUrl from "#/styles/index.css?url";
+import { useEffect } from "react";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,17 +22,18 @@ export const Route = createRootRoute({
   head: () => ({
     meta: [
       {
-        charSet: 'utf8',
+        charSet: "utf8",
       },
       {
-        content: 'width=device-width, initial-scale=1',
-        name: 'viewport',
+        content: "width=device-width, initial-scale=1",
+        name: "viewport",
       },
       {
-        title: 'Draft Day',
+        title: "Draft Day",
       },
     ],
   }),
+  links: [{ rel: "stylesheet", href: cssUrl }],
 });
 
 function RootComponent() {
@@ -65,7 +67,7 @@ function waitForHydration(): Promise<AppSettings> {
 
 /** Restore flow (§7): with file + players + settings, navigate straight to /board. */
 function BootRestore() {
-  const navigate = useNavigate({ from: '/' });
+  const navigate = useNavigate({ from: "/" });
 
   useEffect(() => {
     let cancelled = false;
@@ -81,8 +83,8 @@ function BootRestore() {
       if (players !== null) {
         usePlayersStore.getState().setPlayers(players);
       }
-      if (players !== null && file !== null && globalThis.location.pathname === '/') {
-        void navigate({ to: '/board', search: BOARD_SEARCH_DEFAULTS });
+      if (players !== null && file !== null && globalThis.location.pathname === "/") {
+        void navigate({ to: "/board", search: BOARD_SEARCH_DEFAULTS });
       }
       void settings;
     })();

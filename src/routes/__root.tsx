@@ -1,11 +1,11 @@
+import { ColorSchemeScript, MantineProvider } from "@mantine/core";
 import { HeadContent, Outlet, Scripts, createRootRoute, useNavigate } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { loadFile, loadPlayers } from "../lib/storage.ts";
 import { usePlayersStore, useSettingsStore } from "../lib/store.ts";
 import type { AppSettings } from "../lib/types.ts";
 import { BOARD_SEARCH_DEFAULTS } from "../lib/board-search.ts";
-import { MantineProvider } from "@mantine/core";
-import cssUrl from "#/styles/index.css?url";
+
 import { useEffect } from "react";
 
 const queryClient = new QueryClient({
@@ -33,7 +33,6 @@ export const Route = createRootRoute({
       },
     ],
   }),
-  links: [{ rel: "stylesheet", href: cssUrl }],
 });
 
 function RootComponent() {
@@ -41,6 +40,7 @@ function RootComponent() {
     <html>
       <head>
         <HeadContent />
+        <ColorSchemeScript />
       </head>
       <body>
         <MantineProvider defaultColorScheme="auto">

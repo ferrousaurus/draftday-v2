@@ -20,6 +20,9 @@
     "npm:oxfmt@0.63.0": "0.63.0",
     "npm:oxlint-tsgolint@7.0.2001": "7.0.2001",
     "npm:oxlint@1.78.0": "1.78.0_oxlint-tsgolint@7.0.2001",
+    "npm:postcss-preset-mantine@^1.18.0": "1.18.0_postcss@8.5.26",
+    "npm:postcss-simple-vars@^7.0.1": "7.0.1_postcss@8.5.26",
+    "npm:postcss@^8.5.26": "8.5.26",
     "npm:react-dom@19.2.8": "19.2.8_react@19.2.8",
     "npm:react@19.2.8": "19.2.8",
     "npm:typescript@7.0.2": "7.0.2",
@@ -2633,6 +2636,9 @@
         "magicast"
       ]
     },
+    "camelcase-css@2.0.1": {
+      "integrity": "sha512-QOSvevhslijgYwRx6Rv7zKdMF8lbRmx+uQGx2+vDc+KI/eBnsy9kit5aj23AgGu3pa4t9AgwbnXWqS+iOY+2aA=="
+    },
     "camelcase@7.0.1": {
       "integrity": "sha512-xlx1yCK2Oc1APsPXDL2LdlNP6+uu8OCDdhOBSVT279M/S+y75O30C2VuD8T2ogdePBBl7PfPF4504tnLgX3zfw=="
     },
@@ -2831,6 +2837,10 @@
     },
     "css-what@6.2.2": {
       "integrity": "sha512-u/O3vwbptzhMs3L1fQE82ZSLHQQfto5gyZzwteVIEyeaY5Fc7R4dapF/BvRoSYFeqfBk4m0V1Vafq5Pjv25wvA=="
+    },
+    "cssesc@3.0.0": {
+      "integrity": "sha512-/Tb/JcjK111nNScGob5MNtsntNM1aCNUDipB/TkwZFhyDrrE47SOx/18wF2bbjgc3ZzCSKW1T5nt5EbFoAz/Vg==",
+      "bin": true
     },
     "csstype@3.2.3": {
       "integrity": "sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ=="
@@ -4354,6 +4364,51 @@
         "pathe@2.0.3"
       ]
     },
+    "postcss-js@4.1.0_postcss@8.5.26": {
+      "integrity": "sha512-oIAOTqgIo7q2EOwbhb8UalYePMvYoIeRY2YKntdpFQXNosSu3vLrniGgmH9OKs/qAkfoj5oB3le/7mINW1LCfw==",
+      "dependencies": [
+        "camelcase-css",
+        "postcss"
+      ]
+    },
+    "postcss-mixins@12.1.2_postcss@8.5.26": {
+      "integrity": "sha512-90pSxmZVfbX9e5xCv7tI5RV1mnjdf16y89CJKbf/hD7GyOz1FCxcYMl8ZYA8Hc56dbApTKKmU9HfvgfWdCxlwg==",
+      "dependencies": [
+        "postcss",
+        "postcss-js",
+        "postcss-simple-vars",
+        "sugarss",
+        "tinyglobby"
+      ]
+    },
+    "postcss-nested@7.0.2_postcss@8.5.26": {
+      "integrity": "sha512-5osppouFc0VR9/VYzYxO03VaDa3e8F23Kfd6/9qcZTUI8P58GIYlArOET2Wq0ywSl2o2PjELhYOFI4W7l5QHKw==",
+      "dependencies": [
+        "postcss",
+        "postcss-selector-parser"
+      ]
+    },
+    "postcss-preset-mantine@1.18.0_postcss@8.5.26": {
+      "integrity": "sha512-sP6/s1oC7cOtBdl4mw/IRKmKvYTuzpRrH/vT6v9enMU/EQEQ31eQnHcWtFghOXLH87AAthjL/Q75rLmin1oZoA==",
+      "dependencies": [
+        "postcss",
+        "postcss-mixins",
+        "postcss-nested"
+      ]
+    },
+    "postcss-selector-parser@7.1.5": {
+      "integrity": "sha512-KvvtD7SrlBP7dlgkBghEE3r84CABm5SmV2aNcG4oCA+qDnJ/tvKonFVvwWAyyWUEwxuNawdfEAZKP9zM3oZ2Uw==",
+      "dependencies": [
+        "cssesc",
+        "util-deprecate"
+      ]
+    },
+    "postcss-simple-vars@7.0.1_postcss@8.5.26": {
+      "integrity": "sha512-5GLLXaS8qmzHMOjVxqkk1TZPf1jMqesiI7qLhnlyERalG0sMbHIbJqrcnrpmZdKCLglHnRHoEBB61RtGTsj++A==",
+      "dependencies": [
+        "postcss"
+      ]
+    },
     "postcss@8.5.26": {
       "integrity": "sha512-u82N74LFzG8ca+dD8puPnplTXoGH4fTPpVGuIbt36G3qvNlkvfD0lEAZSxaly3KX8TS/L1A1gsCEmvKmBcVbkQ==",
       "dependencies": [
@@ -4868,6 +4923,12 @@
       "integrity": "sha512-PaqAvfUZKBwc/SLmNZtHmzK+v19Z4O4eS3cKPeGvbIv/U3pnyEq4Tuw3/4v/FwfM8VQaEawsyCcOQ0P+kpwWWw==",
       "dependencies": [
         "js-tokens@10.0.0"
+      ]
+    },
+    "sugarss@5.0.1_postcss@8.5.26": {
+      "integrity": "sha512-ctS5RYCBVvPoZAnzIaX5QSShK8ZiZxD5HUqSxlusvEMC+QZQIPCPOIJg6aceFX+K2rf4+SH89eu++h1Zmsr2nw==",
+      "dependencies": [
+        "postcss"
       ]
     },
     "supports-color@10.2.2": {
@@ -5566,6 +5627,9 @@
         "npm:oxfmt@0.63.0",
         "npm:oxlint-tsgolint@7.0.2001",
         "npm:oxlint@1.78.0",
+        "npm:postcss-preset-mantine@^1.18.0",
+        "npm:postcss-simple-vars@^7.0.1",
+        "npm:postcss@^8.5.26",
         "npm:react-dom@19.2.8",
         "npm:react@19.2.8",
         "npm:typescript@7.0.2",

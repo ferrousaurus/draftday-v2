@@ -40,6 +40,9 @@
     "oxfmt": "0.63.0",
     "oxlint": "1.78.0",
     "oxlint-tsgolint": "7.0.2001",
+    "postcss": "^8.5.26",
+    "postcss-preset-mantine": "^1.18.0",
+    "postcss-simple-vars": "^7.0.1",
     "typescript": "7.0.2",
     "vite": "8.2.1",
     "vitest": "^4.1.10"

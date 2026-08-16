@@ -1,7 +1,7 @@
 /* oxlint-disable react/no-multi-comp -- BoardRow (memoized row renderer) is deliberately co-located with BoardTable per docs/plans/optimize-steal-and-reach.md: a separate file would need to export table internals (features, cellContent, flagButtons, rowAccent) and create a circular import. */
 import { Badge, Button, Group, Skeleton, Table } from '@mantine/core';
 import type { BoardPlayer, Platform } from '../lib/types.ts';
-import { type CSSProperties, memo, useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import {
   type Cell,
   FlexRender,
@@ -38,8 +38,8 @@ const features = tableFeatures({
 });
 
 /** ADP/xADP/delta sort with nulls always last, regardless of direction (§6.4). */
-function nullableSortFn(getValue: (row: BoardPlayer) => number | null): SortFn<typeof features, BoardPlayer> {
-  return (rowA, rowB) => {
+const nullableSortFn = (getValue: (row: BoardPlayer) => number | null) =>
+  ((rowA, rowB) => {
     const a = getValue(rowA.original);
     const b = getValue(rowB.original);
     if (a === null && b === null) {
@@ -52,12 +52,11 @@ function nullableSortFn(getValue: (row: BoardPlayer) => number | null): SortFn<t
       return -1;
     }
     return a - b;
-  };
-}
+  }) satisfies SortFn<typeof features, BoardPlayer>;
 
 const helper = createColumnHelper<typeof features, BoardPlayer>();
 
-function sortIndicator(sorted: false | 'asc' | 'desc'): string {
+function sortIndicator(sorted: false | 'asc' | 'desc') {
   if (sorted === 'asc') {
     return ' ▲';
   }
@@ -67,7 +66,7 @@ function sortIndicator(sorted: false | 'asc' | 'desc'): string {
   return '';
 }
 
-function rowAccent(isDrafted: boolean, flag: PlayerFlag | undefined): CSSProperties {
+function rowAccent(isDrafted: boolean, flag: PlayerFlag | undefined) {
   if (isDrafted) {
     return { opacity: 0.45, textDecoration: 'line-through' };
   }
@@ -132,9 +131,8 @@ function headerContent(header: Header<typeof features, BoardPlayer>) {
   );
 }
 
-function cellContent(cell: Cell<typeof features, BoardPlayer>, adpLoading: boolean) {
-  return cell.column.id === 'adp' && adpLoading ? <Skeleton height={14} width={32} /> : <FlexRender cell={cell} />;
-}
+const cellContent = (cell: Cell<typeof features, BoardPlayer>, adpLoading: boolean) =>
+  cell.column.id === 'adp' && adpLoading ? <Skeleton height={14} width={32} /> : <FlexRender cell={cell} />;
 
 type BoardRowProps = {
   row: Row<typeof features, BoardPlayer>;

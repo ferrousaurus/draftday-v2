@@ -144,6 +144,10 @@ export default defineConfig({
     'eslint/max-params': ['warn', 6],
     'eslint/max-depth': ['warn', 6],
     'react/jsx-max-depth': ['warn', { max: 4 }],
+
+    // Import declarations are ordered by module specifier (and preserved by oxfmt).
+    // `sort-imports` declaration sorting uses local binding names instead.
+    'eslint/sort-imports': ['warn', { ignoreDeclarationSort: true }],
   },
   // The config file itself keeps grouped rule ordering and annotated comments;
   // those formatting pedantries are intentionally relaxed here.

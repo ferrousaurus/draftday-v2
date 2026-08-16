@@ -2,8 +2,8 @@
  * Player matching (§4): workbook players ↔ provider players by normalized
  * name + team (+ position as tiebreaker). No fuzzy matching in v1.
  */
-import { normalizeTeam, teamByProTeamId } from "./teams.ts";
-import type { AdpRecord, PlayerAdp, PlayerRecord } from "./types.ts";
+import { normalizeTeam, teamByProTeamId } from './teams.ts';
+import type { AdpRecord, PlayerAdp, PlayerRecord } from './types.ts';
 
 const SUFFIXES = /(?:^|\s)(?:jr\.?|sr\.?|ii|iii|iv|v)$/u;
 
